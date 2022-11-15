@@ -1,3 +1,88 @@
 {
-  "files": {}
+  "files": {
+    "opensafely-nice-managing-the-long-term-effects-of-covid-19.csv": {
+      "id": "opensafely/nice-managing-the-long-term-effects-of-covid-19/64f1ae69",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/nice-managing-the-long-term-effects-of-covid-19/64f1ae69/",
+      "downloaded_at": "2022-11-15 18:08:02.480402Z",
+      "sha": "8ba3006b5e3d054bbc6ed1861d08fdc682a52a31"
+    },
+    "opensafely-referral-and-signposting-for-long-covid.csv": {
+      "id": "opensafely/referral-and-signposting-for-long-covid/12d06dc0",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/referral-and-signposting-for-long-covid/12d06dc0/",
+      "downloaded_at": "2022-11-15 18:08:02.607382Z",
+      "sha": "4574b35cc14eee04bd149d0226f1dae0dfadcb3e"
+    },
+    "opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv": {
+      "id": "opensafely/assessment-instruments-and-outcome-measures-for-long-covid/79c0fa8a",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/assessment-instruments-and-outcome-measures-for-long-covid/79c0fa8a/",
+      "downloaded_at": "2022-11-15 18:08:02.723519Z",
+      "sha": "f09228d28e9a43ea823b4570e7d82ff3714a0010"
+    },
+    "opensafely-covid-identification-in-primary-care-probable-covid-sequelae.csv": {
+      "id": "opensafely/covid-identification-in-primary-care-probable-covid-sequelae/2020-07-16",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/covid-identification-in-primary-care-probable-covid-sequelae/2020-07-16/",
+      "downloaded_at": "2022-11-15 18:08:02.887201Z",
+      "sha": "38dc0c0a34e2b8b376ba72819923f442c30b4946"
+    },
+    "opensafely-ethnicity.csv": {
+      "id": "opensafely/ethnicity/2020-04-27",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/ethnicity/2020-04-27/",
+      "downloaded_at": "2022-11-15 18:08:03.025653Z",
+      "sha": "3d2f3998b71863a80b24d60f6f4282e14191ae13"
+    },
+    "primis-covid19-vacc-uptake-covadm1.csv": {
+      "id": "primis-covid19-vacc-uptake/covadm1/v.1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/covadm1/v.1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:03.164491Z",
+      "sha": "5e6a8bef2da93467d11c25affbd33755205e4204"
+    },
+    "primis-covid19-vacc-uptake-covadm2.csv": {
+      "id": "primis-covid19-vacc-uptake/covadm2/v.1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/covadm2/v.1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:03.299862Z",
+      "sha": "85e09fabdd4cade8aca3b2c85a1ddc90c3f6eb8b"
+    },
+    "primis-covid19-vacc-uptake-covadm3_cod.csv": {
+      "id": "primis-covid19-vacc-uptake/covadm3_cod/v.1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/covadm3_cod/v.1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:03.509414Z",
+      "sha": "b3cabd45827dc0b54a9761aa4761c4d4272465aa"
+    },
+    "primis-covid19-vacc-uptake-covadm4_cod.csv": {
+      "id": "primis-covid19-vacc-uptake/covadm4_cod/v.1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/covadm4_cod/v.1.5.3/",
+      "downloaded_at": "2022-11-15 18:28:30.964890Z",
+      "sha": "c64864f901908ba03222a26c157aa2a07a4978c2"
+    },
+    "primis-covid19-vacc-uptake-covadm5_cod.csv": {
+      "id": "primis-covid19-vacc-uptake/covadm5_cod/v.1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/covadm5_cod/v.1.5.3/",
+      "downloaded_at": "2022-11-15 18:28:31.163211Z",
+      "sha": "df9ff428071833205f8978ca9ccd0c07796ae183"
+    },
+    "primis-covid19-vacc-uptake-pfdrx.csv": {
+      "id": "primis-covid19-vacc-uptake/pfdrx/v1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/pfdrx/v1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:03.663935Z",
+      "sha": "d0abb017e7cb5b1b65b2160ffff5f9f39e441f66"
+    },
+    "primis-covid19-vacc-uptake-azdrx.csv": {
+      "id": "primis-covid19-vacc-uptake/azdrx/v1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/azdrx/v1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:03.844655Z",
+      "sha": "b055ff66b874412064beb6fb61cae632fb6ad41b"
+    },
+    "primis-covid19-vacc-uptake-modrx.csv": {
+      "id": "primis-covid19-vacc-uptake/modrx/v1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/modrx/v1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:03.986442Z",
+      "sha": "3ba9d6de75d4f617412562f01066e8aa3c2cdb92"
+    },
+    "primis-covid19-vacc-uptake-e_boost_cod.csv": {
+      "id": "primis-covid19-vacc-uptake/e_boost_cod/v.1.5.3",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/e_boost_cod/v.1.5.3/",
+      "downloaded_at": "2022-11-15 18:08:04.204354Z",
+      "sha": "31b9ea185de5f23974d3f6a355970503a44a2fe1"
+    }
+  }
 }
