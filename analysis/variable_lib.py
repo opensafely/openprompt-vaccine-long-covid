@@ -27,8 +27,10 @@ def any_of(conditions):
 
 
 def age_as_of(date):
-  return schema.patients.date_of_birth.difference_in_years(date)
-
+  dob =  schema.patients.date_of_birth
+  delta_age = date - dob
+  return delta_age.years
+# returns an integer (rounded down)
 
 # TODO this is not exactly the same as died_from_any_cause().
 # Note that this function only checks the patient table
@@ -106,3 +108,16 @@ def hospitalisation_diagnosis_matches(admissions, codelist):
     for code_str in code_strings
   ]
   return admissions.take(any_of(conditions))
+
+def create_sequential_variables(
+    dataset, variable_name_template, events, column, num_variables, sort_column=None
+):
+    sort_column = sort_column or column
+    for index in range(num_variables):
+        next_event = events.sort_by(getattr(events, sort_column)).first_for_patient()
+        events = events.take(
+            getattr(events, sort_column) > getattr(next_event, sort_column)
+        )
+        variable_name = variable_name_template.format(n=index + 1)
+        setattr(dataset, variable_name, getattr(next_event, column))
+        
