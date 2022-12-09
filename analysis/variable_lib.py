@@ -6,6 +6,8 @@ from databuilder.ehrql import case, when
 from databuilder.tables.beta import tpp as schema
 from databuilder.codes import Codelist
 
+from analysis import codelists
+
 
 def has_prior_event(prior_events, codelist, where=True):
   return (
@@ -120,4 +122,8 @@ def create_sequential_variables(
         )
         variable_name = variable_name_template.format(n=index + 1)
         setattr(dataset, variable_name, getattr(next_event, column))
-        
+
+def long_covid_events_during(start, end):
+  return schema.clinical_events.take(schema.clinical_events.date >= start) \
+    .take(schema.clinical_events.date <= end) \
+    .take(schema.clinical_events.snomedct_code.is_in(codelists.long_covid_combine))

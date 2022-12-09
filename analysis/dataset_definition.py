@@ -1,5 +1,5 @@
 # where EHRQl is defined. Only really need Dastaset, tehe others are specific
-from databuilder.ehrql import Dataset, days, years
+from databuilder.ehrql import Dataset, days, years, case, when
 # this is where we import the schema to run the study with
 from databuilder.tables.beta.tpp import (
   patients,
@@ -18,7 +18,7 @@ from variable_lib import (
 import codelists
 
 # Set index date
-index_date = "2020-11-01"  # can just hardcode as string format instead of date() from datetime. But need that package for operations on dates 
+study_start_date = "2020-11-01"  # can just hardcode as string format instead of date() from datetime. But need that package for operations on dates
 start_of_alpha_epoch = "2020-12-15"  # needs finalising 
 start_of_delta_epoch = "2021-06-01"  # needs finalising 
 start_of_omicron_epoch = "2022-01-01"
@@ -32,16 +32,19 @@ dataset = Dataset()
 
 # practice registration selection
 registrations = practice_registrations \
-    .drop(practice_registrations.start_date > index_date - days(minimum_registration)) \
-    .drop(practice_registrations.end_date <= index_date)
+    .drop(practice_registrations.start_date > study_start_date - days(minimum_registration)) \
+    .drop(practice_registrations.end_date <= study_start_date)
 # get the number of registrations in this period to exclude anyone with >1 in the `set_population` later
 registrations_number = registrations.count_for_patient()
 
 # need to get the start and end date of last registration only
 registration = registrations \
     .sort_by(practice_registrations.start_date).last_for_patient()
-dataset.crd = registration.start_date
-dataset.uts = registration.end_date
+dataset.uts = case(
+    when(registration.end_date.is_null()).then(study_end_date),
+    when(registration.end_date > study_end_date).then(study_end_date),
+    default=registration.end_date,
+)
 
 # long covid code
 first_lc_dx = clinical_events.take(clinical_events.snomedct_code.is_in(codelists.long_covid_combine)) \
@@ -60,16 +63,16 @@ dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
 
 dataset.all_test_positive = sgss_covid_all_tests \
     .take(sgss_covid_all_tests.is_positive) \
-    .drop(sgss_covid_all_tests.specimen_taken_date <= index_date) \
+    .drop(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
     .drop(sgss_covid_all_tests.specimen_taken_date >= first_lc_dx.date - days(covid_to_longcovid_lag)) \
     .count_for_patient()
 
 # Demographic variables
 dataset.sex = patients.sex
-dataset.age = age_as_of(index_date)
-dataset.has_died = has_died(index_date)
-dataset.msoa = address_as_of(index_date).msoa_code
-dataset.imd = address_as_of(index_date).imd_rounded
+dataset.age = age_as_of(study_start_date)
+dataset.has_died = has_died(study_start_date)
+dataset.msoa = address_as_of(study_start_date).msoa_code
+dataset.imd = address_as_of(study_start_date).imd_rounded
 
 # Ethnicity in 6 categories
 dataset.ethnicity = (
