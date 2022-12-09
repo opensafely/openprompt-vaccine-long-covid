@@ -1,7 +1,5 @@
-from datetime import date
-
 # where EHRQl is defined. Only really need Dastaset, tehe others are specific
-from databuilder.ehrql import Dataset, case, codelist_from_csv, when, days, years
+from databuilder.ehrql import Dataset, days, years
 # this is where we import the schema to run the study with
 from databuilder.tables.beta.tpp import (
   patients,
