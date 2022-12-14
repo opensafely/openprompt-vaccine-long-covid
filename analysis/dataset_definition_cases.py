@@ -1,8 +1,9 @@
-from databuilder.ehrql import Dataset
+from databuilder.ehrql import Dataset, case, when
 from databuilder.tables.beta.tpp import (
   clinical_events
 )
 
+from datetime import datetime, timedelta
 from variable_lib import long_covid_events_during
 from datasets import add_common_variables, study_start_date, study_end_date
 
@@ -17,4 +18,5 @@ add_common_variables(dataset, study_start_date, first_lc_dx.date, population=fir
 
 # add specfic variables
 dataset.first_lc_dx = first_lc_dx.date
-dataset.test_to_lc_dx_gap = first_lc_dx.date - dataset.latest_test_before_diagnosis
+dataset.test_to_lc_dx_gap = first_lc_dx.date - dataset.latest_test_before_diagnosis \
+  .days
