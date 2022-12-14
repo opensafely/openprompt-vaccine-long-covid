@@ -5,17 +5,22 @@ expectations:
 
 actions:
 
-  generate_dataset:
+  generate_dataset_cases:
     run: >
       databuilder:v0 
-        generate-dataset analysis/dataset_definition.py
-        --output output/dataset.csv
+        generate-dataset analysis/dataset_definition_cases.py --output output/dataset_cases.csv
     outputs:
       highly_sensitive:
-        dataset: output/dataset.csv
-    ## note: when running studies for real it is recommended to add the option --output-format='csv.gz' to the run command,
-    ## and add '.gz' to the output file path, to produce the output in compressed form to reduce file size.
-
+        dataset_cases: output/dataset_cases.csv
+  
+  generate_dataset_controls:
+    run: >
+      databuilder:v0 
+        generate-dataset analysis/dataset_definition_controls.py --output output/dataset_controls.csv 
+    outputs:
+      highly_sensitive:
+        dataset_controls: output/dataset_controls.csv
+  
   # describe: 
   #   run: r:latest analysis/report.R
   #   needs: [generate_study_population]
