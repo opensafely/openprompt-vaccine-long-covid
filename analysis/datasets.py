@@ -8,6 +8,7 @@ from databuilder.tables.beta.tpp import (
   vaccinations,
   sgss_covid_all_tests
 )
+import datetime
 
 from variable_lib import (
   age_as_of,
@@ -17,8 +18,8 @@ from variable_lib import (
 )
 import codelists
 
-study_start_date = "2020-11-01"
-study_end_date = "2022-11-01"
+study_start_date = datetime.date(2020, 11, 1)
+study_end_date = datetime.date(2022, 11, 1)
 
 minimum_registration = 90  # ~3 months of previous registration
 covid_to_longcovid_lag = 84  # 12 weeks
@@ -43,18 +44,6 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         default=registration.end_date,
     )
 
-    # covid tests
-    dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
-        .take(sgss_covid_all_tests.is_positive) \
-        .drop(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
-        .sort_by(sgss_covid_all_tests.specimen_taken_date).last_for_patient().specimen_taken_date
-
-    dataset.all_test_positive = sgss_covid_all_tests \
-        .take(sgss_covid_all_tests.is_positive) \
-        .drop(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
-        .drop(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
-        .count_for_patient()
-
     # Demographic variables
     dataset.sex = patients.sex
     dataset.age = age_as_of(study_start_date)
@@ -68,6 +57,18 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .last_for_patient() \
         .ctv3_code.to_category(codelists.ethnicity.Grouping_6)
 
+    # covid tests
+    dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
+        .take(sgss_covid_all_tests.is_positive) \
+        .drop(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
+        .sort_by(sgss_covid_all_tests.specimen_taken_date).last_for_patient().specimen_taken_date
+
+    dataset.all_test_positive = sgss_covid_all_tests \
+        .take(sgss_covid_all_tests.is_positive) \
+        .drop(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
+        .drop(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
+        .count_for_patient()
+
     # vaccine code
     create_sequential_variables(
       dataset,
@@ -79,8 +80,8 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     # Vaccines from the vaccines schema
     all_vacc = vaccinations \
-      .take(vaccinations.date < end_date - days(vaccine_to_longcovid_lag)) \
-      .take(vaccinations.target_disease == "SARS-2 CORONAVIRUS")
+        .take(vaccinations.date < end_date - days(vaccine_to_longcovid_lag)) \
+        .take(vaccinations.target_disease == "SARS-2 CORONAVIRUS")
 
     dataset.no_prev_vacc = all_vacc.count_for_patient()
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
