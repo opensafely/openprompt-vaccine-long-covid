@@ -6,7 +6,7 @@ from databuilder.ehrql import case, when
 from databuilder.tables.beta import tpp as schema
 from databuilder.codes import Codelist
 
-from analysis import codelists
+import codelists
 
 
 def has_prior_event(prior_events, codelist, where=True):
@@ -15,13 +15,6 @@ def has_prior_event(prior_events, codelist, where=True):
     .take(prior_events.snomedct_code.is_in(codelist))
     .exists_for_patient()
   )
-
-
-def combine_codelists(*codelists):
-  codes = set()
-  for codelist in codelists:
-    codes.update(codelist.codes)
-  return Codelist(codes=codes, category_maps={})
 
 
 def any_of(conditions):

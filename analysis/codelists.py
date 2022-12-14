@@ -1,5 +1,5 @@
 from databuilder.codes import REGISTRY, Codelist, codelist_from_csv
-from variable_lib import combine_codelists
+
 
 def codelist(codes, system):
     code_class = REGISTRY[system]
@@ -8,25 +8,36 @@ def codelist(codes, system):
         category_maps={},
     )
 
+
+def combine_codelists(*codelists):
+    codes = set()
+    for codelist in codelists:
+        codes.update(codelist.codes)
+    return Codelist(codes=codes, category_maps={})
+
+
 # A variety of plausible long covid codelists:
 # https://www.opencodelists.org/codelist/opensafely/nice-managing-the-long-term-effects-of-covid-19/64f1ae69/ 
 long_covid_nice_dx = codelist_from_csv(
     "codelists/opensafely-nice-managing-the-long-term-effects-of-covid-19.csv",
-    system="snomedct", 
-    column = "code"
+    system="snomedct",
+    column="code"
 )
+
+
 # https://www.opencodelists.org/codelist/opensafely/referral-and-signposting-for-long-covid/12d06dc0/
 long_covid_referral_codes = codelist_from_csv(
     "codelists/opensafely-referral-and-signposting-for-long-covid.csv",
-    system="snomedct", 
-    column = "code"
+    system="snomedct",
+    column="code"
 ) 
+
 
 # https://www.opencodelists.org/codelist/opensafely/assessment-instruments-and-outcome-measures-for-long-covid/79c0fa8a/
 long_covid_assessment_codes = codelist_from_csv(
     "codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv",
-    system="snomedct", 
-    column = "code"
+    system="snomedct",
+    column="code"
 )
 
 long_covid_combine = combine_codelists(
