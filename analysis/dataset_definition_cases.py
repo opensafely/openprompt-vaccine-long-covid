@@ -18,5 +18,4 @@ add_common_variables(dataset, study_start_date, first_lc_dx.date, population=fir
 
 # add specfic variables
 dataset.first_lc_dx = first_lc_dx.date
-dataset.test_to_lc_dx_gap = first_lc_dx.date - dataset.latest_test_before_diagnosis \
-  .days
+dataset.test_to_lc_dx_gap = (first_lc_dx.date - dataset.latest_test_before_diagnosis).days
