@@ -1,0 +1,61 @@
+---
+title: "Quick checks of output"
+author: "Alasdair Henderson"
+date: "2023-02-07"
+output: html_document
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_dir = here::here("output")
+    )
+  })
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+
+df_cases <- read_csv(here("output/dataset_cases.csv")) %>% 
+  janitor::clean_names()
+df_controls <- read_csv(here("output/dataset_controls.csv")) %>% 
+  janitor::clean_names()
+df_lcfirst <- read_csv(here("output/dataset_lc_pre_vacc.csv")) %>% 
+  janitor::clean_names()
+
+```
+
+## Quick checks of outputs created by data builder
+
+This is a quick document to check a few inclusion and exclusion criteria of the cohorts:    
+
+* Age is between 16 and 100
+
+* Only one registration per patid 
+
+For the primary cohorts: 
+* 
+
+```{r checks, echo=FALSE}
+fn_check <- function(df){
+  check1 <- sum(df$age > 100)
+  check2 <- sum(df$age < 16)
+  check3 <- sum(duplicated(df$patient_id))
+  ## needs a helluva lot of improving!
+  return_checks <- ifelse(sum(check1, check2, check3) > 0 , paste0("You failed!", c(check1, check2, check3)), "You passed!")
+  return_checks
+}
+fn_check(df_cases)
+fn_check(df_controls)
+fn_check(df_lcfirst)
+```
+
+
+## Quick glimpse of data
+
+Stacking the `dataset_cases` and `dataset_controls` together and using `skimr::skim()` to summarise the data
+
+```{r skim, echo=FALSE}
+df_primarycohort <- bind_rows(df_cases, df_controls)
+skimr::skim(df_primarycohort)
+```
