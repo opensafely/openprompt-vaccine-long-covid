@@ -6,7 +6,8 @@ from databuilder.tables.beta.tpp import (
   practice_registrations,
   clinical_events,
   vaccinations,
-  sgss_covid_all_tests
+  sgss_covid_all_tests,
+  hospital_admissions
 )
 import datetime
 
@@ -38,6 +39,12 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # need to get the start and end date of last registration only
     registration = registrations \
         .sort_by(practice_registrations.start_date).last_for_patient()
+
+    # need to find out if they had a hospitalisation for covid and censor then
+    # note (18/01): needs looking at before I can use it. 
+    #hospitalised = hospital_admissions.take(hospital_admissions.all_diagnoses.contains(codelists.covidhosp))
+    # then add into the end_date definition below (or as a secondary end date for sensitivity analysis?)     
+
     dataset.pt_end_date = case(
         when(registration.end_date.is_null()).then(end_date),
         when(registration.end_date > end_date).then(end_date),
@@ -47,7 +54,6 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # Demographic variables
     dataset.sex = patients.sex
     dataset.age = age_as_of(study_start_date)
-    dataset.has_died = has_died(study_start_date)
     dataset.msoa = address_as_of(study_start_date).msoa_code
     dataset.imd = address_as_of(study_start_date).imd_rounded
 

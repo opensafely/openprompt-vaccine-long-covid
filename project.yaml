@@ -21,6 +21,14 @@ actions:
       highly_sensitive:
         dataset_controls: output/dataset_controls.csv
   
+  generate_dataset_lc_pre_vacc:
+    run: >
+      databuilder:v0 
+        generate-dataset analysis/dataset_definition_longcovid_prevaccine.py --output output/dataset_lc_pre_vacc.csv 
+    outputs:
+      highly_sensitive:
+        dataset_controls: output/dataset_lc_pre_vacc.csv
+  
   # describe: 
   #   run: r:latest analysis/report.R
   #   needs: [generate_study_population]
