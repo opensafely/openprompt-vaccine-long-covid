@@ -20,7 +20,7 @@ from variable_lib import (
 import codelists
 
 study_start_date = datetime.date(2020, 11, 1)
-study_end_date = datetime.date(2022, 11, 1)
+study_end_date = datetime.date(2023, 1, 31)
 
 minimum_registration = 90  # ~3 months of previous registration
 covid_to_longcovid_lag = 84  # 12 weeks
@@ -29,6 +29,12 @@ vaccine_to_longcovid_lag = covid_to_longcovid_lag + vaccine_effective_lag
 
 
 def add_common_variables(dataset, study_start_date, end_date, population):
+    # From OS slack - a discussion of how to do "is registered" in ehrQL
+    # is_registered = (
+    #     practice_registrations.take(practice_registrations.date_start <= date_of_death)
+    #     .drop(practice_registrations.date_end <= date_of_death)
+    #     .exists_for_patient()
+    # )
     # practice registration selection
     registrations = practice_registrations \
         .drop(practice_registrations.start_date > study_start_date - days(minimum_registration)) \
