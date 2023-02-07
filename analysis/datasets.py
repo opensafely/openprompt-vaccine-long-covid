@@ -60,6 +60,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # Demographic variables
     dataset.sex = patients.sex
     dataset.age = age_as_of(study_start_date)
+    dataset.has_died = has_died(study_start_date)
     dataset.msoa = address_as_of(study_start_date).msoa_code
     dataset.imd = address_as_of(study_start_date).imd_rounded
 
@@ -98,5 +99,6 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.no_prev_vacc = all_vacc.count_for_patient()
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
 
-    population = population & (registrations_number == 1)
+    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 16)
+
     dataset.set_population(population)
