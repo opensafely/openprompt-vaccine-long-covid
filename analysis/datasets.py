@@ -15,7 +15,8 @@ from variable_lib import (
   age_as_of,
   has_died,
   address_as_of,
-  create_sequential_variables
+  create_sequential_variables,
+  hospitalisation_diagnosis_matches
 )
 import codelists
 
@@ -29,16 +30,14 @@ vaccine_to_longcovid_lag = covid_to_longcovid_lag + vaccine_effective_lag
 
 
 def add_common_variables(dataset, study_start_date, end_date, population):
-    # From OS slack - a discussion of how to do "is registered" in ehrQL
-    # is_registered = (
-    #     practice_registrations.take(practice_registrations.date_start <= date_of_death)
-    #     .drop(practice_registrations.date_end <= date_of_death)
-    #     .exists_for_patient()
-    # )
     # practice registration selection
     registrations = practice_registrations \
-        .drop(practice_registrations.start_date > study_start_date - days(minimum_registration)) \
+        .take(practice_registrations.start_date <= study_start_date - days(minimum_registration)) \
         .drop(practice_registrations.end_date <= study_start_date)
+        # 08/02 - because we are using .drop instaed of .take we are not dropping people with NULL start date
+        # it is possible that null start date is a data quality problem. 
+        # So to keep consistent with other devs and cohort_extractor. Switch to a .take and therefore drop null start daters 
+
     # get the number of registrations in this period to exclude anyone with >1 in the `set_population` later
     registrations_number = registrations.count_for_patient()
 
@@ -50,6 +49,11 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # note (18/01): needs looking at before I can use it. 
     #hospitalised = hospital_admissions.take(hospital_admissions.all_diagnoses.contains(codelists.covidhosp))
     # then add into the end_date definition below (or as a secondary end date for sensitivity analysis?)     
+
+    dataset.pt_start_date = case(
+        when(registration.start_date + days(minimum_registration) > study_start_date).then(registration.start_date + days(minimum_registration)),
+        default=study_start_date,
+    )
 
     dataset.pt_end_date = case(
         when(registration.end_date.is_null()).then(end_date),
@@ -83,6 +87,17 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .drop(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
 
+    # covid hospitalisation
+    covid_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_covid)
+
+    dataset.first_covid_hosp = covid_hospitalisations \
+        .sort_by(covid_hospitalisations.admission_date) \
+        .first_for_patient().admission_date
+    
+    dataset.all_covid_hosp = covid_hospitalisations \
+        .drop(covid_hospitalisations.admission_date >= end_date - days(covid_to_longcovid_lag)) \
+        .count_for_patient()
+
     # vaccine code
     create_sequential_variables(
       dataset,
@@ -102,6 +117,6 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
     
-    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 16)
+    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 16) # will remove missing age 
 
     dataset.set_population(population)
