@@ -63,6 +63,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.has_died = has_died(study_start_date)
     dataset.msoa = address_as_of(study_start_date).msoa_code
     dataset.imd = address_as_of(study_start_date).imd_rounded
+    dataset.death_date = patients.date_of_death
 
     # Ethnicity in 6 categories
     dataset.ethnicity = clinical_events.take(clinical_events.ctv3_code.is_in(codelists.ethnicity)) \
@@ -99,6 +100,8 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.no_prev_vacc = all_vacc.count_for_patient()
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
 
+    # EXCLUSION criteria - gather these all here to remain consistent with the protocol
+    
     population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 16)
 
     dataset.set_population(population)
