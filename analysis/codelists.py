@@ -94,3 +94,9 @@ vac_adm_combine = combine_codelists(
   vac_adm_4,
   vac_adm_5
 )
+
+hosp_covid = codelist_from_csv(
+  "codelists/opensafely-covid-identification.csv",
+  system="icd10",
+  column="icd10_code"
+)

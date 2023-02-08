@@ -83,6 +83,12 @@
       "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/e_boost_cod/v.1.5.3/",
       "downloaded_at": "2022-11-15 18:08:04.204354Z",
       "sha": "31b9ea185de5f23974d3f6a355970503a44a2fe1"
+    },
+    "opensafely-covid-identification.csv": {
+      "id": "opensafely/covid-identification/7bbfd8eb",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/covid-identification/7bbfd8eb/",
+      "downloaded_at": "2023-02-08 12:03:29.985044Z",
+      "sha": "124db6929439379b7dacd55ba26ae4f2ed9370bc"
     }
   }
 }
