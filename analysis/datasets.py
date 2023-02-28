@@ -73,7 +73,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.ethnicity = clinical_events.take(clinical_events.ctv3_code.is_in(codelists.ethnicity)) \
         .sort_by(clinical_events.date) \
         .last_for_patient() \
-        .ctv3_code.to_category(codelists.ethnicity.Grouping_6)
+        .ctv3_code.to_category(codelists.ethnicity)
 
     # covid tests
     dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
