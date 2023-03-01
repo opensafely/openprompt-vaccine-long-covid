@@ -12,8 +12,8 @@ df_full <- bind_rows(cases,
                     controls) %>% 
   arrange(patient_id)
 
-glimpse(df_full)
-skimr::skim(df_full)
+#glimpse(df_full)
+#skimr::skim(df_full)
 
 
 # calculate the raw rate as a sense check ---------------------------------
@@ -50,7 +50,7 @@ df_vacc_long$t[df_vacc_long$t < 0] <- 0
 
 df_vacc_timeupdated <- df_vacc_base %>% 
   survival::tmerge(df_vacc_base, id = patient_id, lc_out = event(t, lc_out)) %>% 
-  survival::tmerge(df_vacc_long, id = patient_id, vaccines = tdc(t, vacc_no, init = 0))  
+  survival::tmerge(df_vacc_long, id = patient_id, vaccines = tdc(t, vacc_no, 0))  
 
 df_vacc_timeupdated %>% 
   group_by(vaccines) %>% 
