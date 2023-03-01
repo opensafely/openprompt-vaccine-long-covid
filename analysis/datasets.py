@@ -47,7 +47,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     # need to find out if they had a hospitalisation for covid and censor then
     # note (18/01): needs looking at before I can use it. 
-    #hospitalised = hospital_admissions.take(hospital_admissions.all_diagnoses.contains(codelists.covidhosp))
+    # hospitalised = hospital_admissions.take(hospital_admissions.all_diagnoses.contains(codelists.covidhosp))
     # then add into the end_date definition below (or as a secondary end date for sensitivity analysis?)     
 
     dataset.pt_start_date = case(
@@ -101,7 +101,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # vaccine code
     create_sequential_variables(
       dataset,
-      "covid_vax_{n}_adm",
+      "covid_vacc_{n}_adm",
       num_variables=5,
       events=clinical_events.take(clinical_events.snomedct_code.is_in(codelists.vac_adm_combine)),
       column="date"
@@ -114,6 +114,14 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     dataset.no_prev_vacc = all_vacc.count_for_patient()
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
+    # dataset.vacc_1 = all_vacc.sort_by(all_vacc.date).first_for_patient().date
+    create_sequential_variables(
+      dataset,
+      "covid_vacc_{n}_vacc_tab",
+      num_variables=5,
+      events=all_vacc,
+      column="date"
+    )
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
     
