@@ -29,14 +29,14 @@ actions:
       highly_sensitive:
         dataset_controls: output/dataset_lc_pre_vacc.csv.gz
   
-  quick_checks: 
-    run: >
-      r:latest
-        analysis/010_quick_checks.R
-    needs: [generate_dataset_cases, generate_dataset_controls, generate_dataset_lc_pre_vacc]
-    outputs:
-       moderately_sensitive:
-         checks: output/010_quick_checks.html
+  # quick_checks: 
+  #   run: >
+  #     r:latest
+  #       analysis/010_quick_checks.R
+  #   needs: [generate_dataset_cases, generate_dataset_controls, generate_dataset_lc_pre_vacc]
+  #   outputs:
+  #      moderately_sensitive:
+  #        checks: output/010_quick_checks.html
   
   basic_analysis: 
     run: > 
