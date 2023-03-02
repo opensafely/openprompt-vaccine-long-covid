@@ -6,7 +6,9 @@ library(survival)
 library(here)
 
 cases <- readr::read_csv(here("output/dataset_cases.csv.gz")) %>% janitor::clean_names()
+spec(cases) %>% print()
 controls <- readr::read_csv(here("output/dataset_controls.csv.gz")) %>% janitor::clean_names()
+spec(controls) %>% print()
 
 df_full <- bind_rows(cases, 
                     controls) %>% 
@@ -22,7 +24,7 @@ df_full <- bind_rows(cases,
 df_full <- df_full %>% 
   mutate(t = as.numeric((pt_end_date - pt_start_date)/365.25),
          lc_out = as.numeric(!is.na(first_lc_dx)),
-         last_vacc_gap = as.numeric((pt_end_date - date_last_vacc)/365.25)) 
+         last_vacc_gap = last_vacc_gap/365.25) 
 df_full %>% 
   group_by(no_prev_vacc) %>% 
   summarise(

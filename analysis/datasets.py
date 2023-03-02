@@ -114,6 +114,8 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     dataset.no_prev_vacc = all_vacc.count_for_patient()
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
+    dataset.last_vacc_gap = (dataset.pt_end_date - dataset.date_last_vacc).days
+
     # dataset.vacc_1 = all_vacc.sort_by(all_vacc.date).first_for_patient().date
     create_sequential_variables(
       dataset,
