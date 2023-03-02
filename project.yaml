@@ -8,7 +8,7 @@ actions:
   generate_dataset_cases:
     run: >
       databuilder:v0 
-        generate-dataset analysis/dataset_definition_cases.py --output 'output/dataset_cases.csv.gz'
+        generate-dataset analysis/dataset_definition_cases.py --output output/dataset_cases.csv.gz
     outputs:
       highly_sensitive:
         dataset_cases: output/dataset_cases.csv.gz
@@ -16,7 +16,7 @@ actions:
   generate_dataset_controls:
     run: >
       databuilder:v0 
-        generate-dataset analysis/dataset_definition_controls.py --output 'output/dataset_controls.csv.gz'
+        generate-dataset analysis/dataset_definition_controls.py --output output/dataset_controls.csv.gz
     outputs:
       highly_sensitive:
         dataset_controls: output/dataset_controls.csv.gz
@@ -24,7 +24,7 @@ actions:
   generate_dataset_lc_pre_vacc:
     run: >
       databuilder:v0 
-        generate-dataset analysis/dataset_definition_longcovid_prevaccine.py --output 'output/dataset_lc_pre_vacc.csv.gz' 
+        generate-dataset analysis/dataset_definition_longcovid_prevaccine.py --output output/dataset_lc_pre_vacc.csv.gz
     outputs:
       highly_sensitive:
         dataset_controls: output/dataset_lc_pre_vacc.csv.gz
