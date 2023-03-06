@@ -18,6 +18,10 @@ df_full <- bind_rows(cases,
                     controls) %>% 
   arrange(patient_id)
 
+## convert no. vaccines to factor (0-6+)
+df_full <- df_full %>% 
+  mutate(no_prev_vacc = cut(no_prev_vacc, breaks = c(-Inf, 0:6, Inf)))  
+
 # calculate the raw rate as a sense check ---------------------------------
 # using vaccine status at endpoint so obviously inaccurate as someone with 3 vaccines just before their LC record
 # did not spend the whole follow up with 3 vaccine doses. But we will deal with that in the next step...
@@ -29,6 +33,7 @@ df_full <- df_full %>%
 df_full %>% 
   group_by(no_prev_vacc) %>% 
   summarise(
+    n = n(), 
     lc = sum(lc_out),
     fup = sum(t),
     total_tests = sum(all_test_positive),
@@ -36,7 +41,11 @@ df_full %>%
     n_dx = sum(lc_dx_flag == "Dx", na.rm = T),
     n_rx = sum(lc_dx_flag == "Rx", na.rm = T)
   ) %>% 
-  mutate(rate_per1e5 = (lc/fup)*100000) %>% 
+  mutate(rate_per1e5 = (lc/fup)*1e5,
+         se_rate = (sqrt(lc)/fup)*1e5,
+         errorfactor = exp(1.96/sqrt(lc)),
+         lci = rate_per1e5/errorfactor,
+         uci = rate_per1e5*errorfactor) %>% 
   write_csv(here("output/tab020_raw_lc_rates.csv"))
 
 # time update vaccine status ----------------------------------------------
@@ -65,5 +74,9 @@ df_vacc_timeupdated %>%
     n_dx = sum(lc_dx_flag == "Dx", na.rm = T),
     n_rx = sum(lc_dx_flag == "Rx", na.rm = T)
   ) %>% 
-  mutate(rate_per1e5 = (lc/fup)*100000) %>% 
+  mutate(rate_per1e5 = (lc/fup)*1e5,
+         se_rate = (sqrt(lc)/fup)*1e5,
+         errorfactor = exp(1.96/sqrt(lc)),
+         lci = rate_per1e5/errorfactor,
+         uci = rate_per1e5*errorfactor) %>% 
   write_csv(here("output/tab021_tdc_lc_rates.csv"))
