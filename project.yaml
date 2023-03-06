@@ -46,6 +46,6 @@ actions:
     outputs:
        moderately_sensitive:
          rawrates: output/tab020_raw_lc_rates.csv
-         # vaccrates: 
+         tdcrates:  output/tab021_tdc_lc_rates.csv
          # timeplot: 
 
