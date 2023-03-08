@@ -46,6 +46,9 @@ actions:
     outputs:
        moderately_sensitive:
          rawrates: output/tab020_raw_lc_rates.csv
-         tdcrates:  output/tab021_tdc_lc_rates.csv
+         mixmatchrates: output/tab021_raw_lc_rates_mixmatch.csv
+         tdcrates:  output/tab022_tdc_lc_rates.csv
+         cuminc: output/fig1_cumulative_incidence.pdf
+         rawcountsplot: output/fig2_raw_counts_bysex.pdf
          # timeplot: 
 
