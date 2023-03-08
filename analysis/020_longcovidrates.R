@@ -3,8 +3,6 @@
 
 library(tidyverse)
 library(survival)
-library(cmprsk)
-library(ggsurvfit)
 library(lubridate)
 library(here)
 
@@ -107,7 +105,8 @@ df_vacc_long$t[df_vacc_long$t < 0] <- 0
 
 df_vacc_timeupdated <- df_vacc_base %>% 
   survival::tmerge(df_vacc_base, id = patient_id, lc_out = event(t, lc_out)) %>% 
-  survival::tmerge(df_vacc_long, id = patient_id, vaccines = tdc(t, vacc_no, 0))  
+  survival::tmerge(df_vacc_long, id = patient_id, vaccines = tdc(t, vacc_no, 0)) %>% 
+  mutate(vaccines = factor(vaccines))
 
 tab3_tdcrates <- calculate_rates(df_vacc_timeupdated, vaccines)
 tab3_tdcrates %>% 
@@ -115,31 +114,33 @@ tab3_tdcrates %>%
 
 
 # plot cumulative incidence curves ----------------------------------------
+vaccgroups <- levels(df_vacc_timeupdated$vaccines)
+n_groups <- length(vaccgroups)
+colours <- topo.colors(n_groups)
+fit <- survival::survfit(Surv(t, lc_out) ~ as.factor(vaccines), data=df_vacc_timeupdated)
+
 pdf(here("output/fig1_cumulative_incidence.pdf"), width = 8, height = 6)
-df_vacc_timeupdated$lc_out_fct <- factor(df_vacc_timeupdated$lc_out, levels = 0:1)
-tidycmprsk::cuminc(Surv(t, lc_out_fct) ~ vaccines, data = df_vacc_timeupdated) %>% 
-  ggcuminc() + 
-  labs(
-    x = "Years"
-  ) + 
-  add_confidence_interval()
+  plot(fit, conf.int = FALSE, col = colours, lwd = 2, fun = "cumhaz", xlab = "Years", ylab = "Cumulative Hazard")
+  legend("topleft", legend = vaccgroups, col = colours, lty = 1, lwd = 1.5)
 dev.off()
 
-
 # plot time of Long COVID diagnosis ---------------------------------------
-timeplot <- df_full %>% 
+timeplot <- df_vacc_timeupdated %>% 
   ungroup() %>% 
-  dplyr::select(patient_id, pt_start_date, pt_end_date, sex, lc_out, first_lc_dx) %>% 
+  dplyr::select(patient_id, pt_start_date, pt_end_date, sex, vaccines, lc_out, first_lc_dx) %>% 
   mutate(month = month(first_lc_dx),
          year = year(first_lc_dx)) %>% 
-  group_by(year, month, sex) %>% 
+  group_by(year, month, sex, vaccines) %>% 
   summarise(total_lc = sum(lc_out, na.rm = TRUE)) %>% 
   mutate(day = 1,
          date = make_date(year, month, day))
 
+
 pdf(here("output/fig2_raw_counts_bysex.pdf"), width = 8, height = 6)
-ggplot(timeplot, aes(x = date, y = total_lc, colour = sex, fill = sex)) +
-  geom_col() +
+ggplot(timeplot, aes(x = date, y = total_lc, fill = vaccines)) +
+  geom_col(lty = 1, col = "Gray80") +
+  scale_fill_manual(values = colours) +
+  facet_wrap(~sex, ncol = 1) + 
   labs(x = "Date", y = "Count of Long COVID codes") +
   theme_bw()
 dev.off()
