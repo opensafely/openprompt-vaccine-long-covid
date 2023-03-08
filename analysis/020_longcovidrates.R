@@ -3,7 +3,7 @@
 
 library(tidyverse)
 library(survival)
-library(tidycmprsk)
+library(cmprsk)
 library(ggsurvfit)
 library(lubridate)
 library(here)
