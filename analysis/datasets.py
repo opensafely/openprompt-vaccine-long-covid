@@ -65,7 +65,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.sex = patients.sex
     dataset.age = age_as_of(study_start_date)
     dataset.has_died = has_died(study_start_date)
-    dataset.msoa = address_as_of(study_start_date).msoa_code
+    dataset.msoa = address_as_of(study_start_date).nuts1_region_name
     dataset.imd = address_as_of(study_start_date).imd_rounded
     dataset.death_date = patients.date_of_death
 
