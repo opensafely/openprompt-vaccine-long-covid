@@ -5,7 +5,7 @@
 Details of the purpose and any published outputs from this project can be found at the link above.
 
 ### Protocol
-* The ongoing protocol is available [here](https://docs.google.com/document/d/1wTpLpgbAEySw0d1-IhhbShliECyhotyW7u3egWKbtL4/edit#heading=h.bwlxobmevtqr)
+* The protocol is available in the [docs](https://github.com/opensafely/openprompt-vaccine-long-covid/tree/main/docs) folder.
 
 ### Dataset explanation
 - This project uses OpenSAFELY Data Builder
