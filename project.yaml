@@ -41,14 +41,14 @@ actions:
   basic_analysis: 
     run: > 
       r:latest
-        analysis/020_longcovidrates.R
-    needs: [generate_dataset_cases, generate_dataset_controls, generate_dataset_lc_pre_vacc]
+        analysis/001_targets_style_master.R
+    needs: [generate_dataset_cases, generate_dataset_controls]
     outputs:
        moderately_sensitive:
-         rawrates: output/tab020_raw_lc_rates.csv
-         mixmatchrates: output/tab021_raw_lc_rates_mixmatch.csv
-         tdcrates:  output/tab022_tdc_lc_rates.csv
+         cruderates: output/tab021_crude_lc_rates.csv
+         tuvrates:  output/tab022_tuv_lc_rates.csv
+         poissonrates: output/tab023_poissonrates.csv
          cuminc: output/fig1_cumulative_incidence.pdf
          rawcountsplot: output/fig2_raw_counts_bysex.pdf
+         irrplot: output/fig3_rate_ratios.pdf
          # timeplot: 
-
