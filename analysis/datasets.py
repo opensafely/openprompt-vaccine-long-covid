@@ -65,7 +65,8 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.sex = patients.sex
     dataset.age = age_as_of(study_start_date)
     dataset.has_died = has_died(study_start_date)
-    dataset.msoa = address_as_of(study_start_date).nuts1_region_name
+    dataset.msoa = address_as_of(study_start_date).msoa_code
+    dataset.practice_nuts = registration.practice_nuts1_region_name
     dataset.imd = address_as_of(study_start_date).imd_rounded
     dataset.death_date = patients.date_of_death
 
@@ -134,12 +135,12 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     create_sequential_variables(
       dataset,
       "covid_vacc_{n}_manufacturer_tab",
-      num_variables=3,
+      num_variables=2,
       events=all_vacc,
       column="product_name"
     )
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
-    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 16)  # will remove missing age
+    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 18)  # will remove missing age
 
     dataset.define_population(population)
