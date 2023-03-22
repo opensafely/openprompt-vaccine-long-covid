@@ -24,9 +24,38 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
       # convert gap between most recent vaccine and LC record into years
       last_vacc_gap = last_vacc_gap / 365.25,
       # convert IMD to quintiles
-      imd = cut(imd, seq(0, 100, 20), labels = as.character(1:5)),
+      imd_q5 = cut(imd,
+                   breaks = c(32844 * seq(0, 1, 0.2)),
+                   labels = c("1 (most deprived)",
+                              "2",
+                              "3",
+                              "4",
+                              "5 (least deprived)")
+      ),
+      # label ethnicity variable 
+      ethnicity = factor(
+        ethnicity,
+        levels = 1:6, 
+        labels = c(
+          "White",
+          "Mixed", 
+          "South Asian", 
+          "Black",
+          "Other",
+          "Not stated"
+        )),
       # create an age category variable for easy stratification
-      age_cat = cut(age, seq(18, 108, 20)),
+      age_cat = cut(
+        age, 
+        breaks = c(0, 31, 41, 51, 61, 71, Inf),
+        labels = c(
+          "18-29",
+          "30-39",
+          "40-49",
+          "50-59",
+          "60-69",
+          "70+"
+        )),
       # age centred (for modelling purposes)
       age_centred = age - mean(age, na.rm = TRUE),
       # make ethnicity a factor
