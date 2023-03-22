@@ -24,7 +24,7 @@ time_data <- time_update_vaccinedoses(cleaned_data)
 # plot cumulative incidence curves ----------------------------------------
 vaccgroups <- levels(time_data$vaccines)
 n_groups <- length(vaccgroups)
-colours <- paletteer:: topo.colors(n_groups)
+colours <- topo.colors(n_groups)
 fit <- survival::survfit(Surv(t, lc_out) ~ as.factor(vaccines), data=time_data)
 
 pdf(here("output/fig1_cumulative_incidence.pdf"), width = 8, height = 6)
