@@ -29,26 +29,32 @@ actions:
       highly_sensitive:
         dataset_controls: output/dataset_lc_pre_vacc.csv.gz
   
-  # quick_checks: 
-  #   run: >
-  #     r:latest
-  #       analysis/010_quick_checks.R
-  #   needs: [generate_dataset_cases, generate_dataset_controls, generate_dataset_lc_pre_vacc]
-  #   outputs:
-  #      moderately_sensitive:
-  #        checks: output/010_quick_checks.html
-  
-  basic_analysis: 
-    run: > 
+  crude_rates:
+    run: >
       r:latest
-        analysis/001_targets_style_master.R
+        analysis/020_cruderates.R
     needs: [generate_dataset_cases, generate_dataset_controls]
     outputs:
-       moderately_sensitive:
-         cruderates: output/tab021_crude_lc_rates.csv
-         tuvrates:  output/tab022_tuv_lc_rates.csv
-         poissonrates: output/tab023_poissonrates.csv
-         cuminc: output/fig1_cumulative_incidence.pdf
-         rawcountsplot: output/fig2_raw_counts_bysex.pdf
-         irrplot: output/fig3_rate_ratios.pdf
-         # timeplot: 
+      moderately_sensitive:
+        cruderates: output/tab021_crude_lc_rates.csv
+        tuvrates:  output/tab022_tuv_lc_rates.csv
+  
+  plot_incidence:
+    run: >
+      r:latest
+        analysis/030_plotrates.R
+    needs: [generate_dataset_cases, generate_dataset_controls]
+    outputs:
+      moderately_sensitive:
+        cuminc: output/fig1_cumulative_incidence.pdf
+        rawcountsplot: output/fig2_raw_counts_bysex.pdf
+  
+  poisson_rates:
+    run: >
+      r:latest
+        analysis/040_poisson_regressions.R
+    needs: [generate_dataset_cases, generate_dataset_controls]
+    outputs:
+      moderately_sensitive:
+        poissonrates: output/tab023_poissonrates.csv
+        irrplot: output/fig3_rate_ratios.pdf
