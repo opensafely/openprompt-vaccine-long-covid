@@ -42,7 +42,7 @@ apply_rates_over_stratifiers <- function(data){
     calculate_rates(data, grouping_var = no_prev_vacc),
     calculate_rates(data, grouping_var = mix_and_match),
     calculate_rates(data, grouping_var = practice_nuts),
-    calculate_rates(data, grouping_var = imd),
+    calculate_rates(data, grouping_var = imd_q5),
     calculate_rates(data, grouping_var = ethnicity)
   )
 }
