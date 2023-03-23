@@ -38,5 +38,7 @@ time_update_vaccinedoses <- function(data){
                            "Missing manufacturer info",
                            "Fewer than 2 doses"
                          )))
-  df_vacc_timeupdated
+  
+  df_vacc_timeupdated %>% 
+    dplyr::select(-starts_with("covid_vacc_"))
 }

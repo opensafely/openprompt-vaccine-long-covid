@@ -26,7 +26,7 @@ tidy_vaccine_data <- function(dataset){
   # merge these back on
   df_full <- df_full %>% 
     left_join(
-      dplyr::select(mix_and_match_vacc, patient_id, mix_and_match)
+      dplyr::select(mix_and_match_vacc, patient_id, mRNA, mix_and_match)
     ) %>% 
     mutate("mix_and_match" = factor(
       case_when(
