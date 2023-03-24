@@ -38,6 +38,9 @@ actions:
       highly_sensitive:
         cleandata: output/clean_dataset.gz.parquet 
         timedata: output/timeupdate_dataset.gz.parquet
+      moderately_sensitive: 
+        txt1: output/data_properties/clean_dataset_skim.txt
+        txt2: output/data_properties/clean_dataset_tabulate.txt
 
   crude_rates:
     run: >

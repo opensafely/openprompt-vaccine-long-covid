@@ -1,4 +1,3 @@
-#library(targets)
 library(tidyverse)
 library(lubridate)
 library(here)
@@ -37,6 +36,13 @@ output_dir <- "output/data_properties"
 filenamebase <- "clean_dataset"
 
 dir.create(here(output_dir), showWarnings = FALSE, recursive=TRUE)
+
+## high-level variable overview ----
+capture.output(
+  skimr::skim_without_charts(cleaned_data),
+  file = here(output_dir, paste0(filenamebase, "_skim", ".txt")),
+  split = FALSE
+)
 
 ## tabulated data ----
 
