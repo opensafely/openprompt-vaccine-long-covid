@@ -34,9 +34,6 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     registrations = practice_registrations \
         .where(practice_registrations.start_date <= study_start_date - days(minimum_registration)) \
         .except_where(practice_registrations.end_date <= study_start_date)
-# 08/02 - because we are using .except_where instaed of .where we are not dropping people with NULL start date
-# it is possible that null start date is a data quality problem.
-# So to keep consistent with other devs and cohort_extractor. Switch to a .where and therefore drop null start daters
 
     # get the number of registrations in this period to exclude anyone with >1 in the `set_population` later
     registrations_number = registrations.count_for_patient()
@@ -44,11 +41,6 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # need to get the start and end date of last registration only
     registration = registrations \
         .sort_by(practice_registrations.start_date).last_for_patient()
-
-    # need to find out if they had a hospitalisation for covid and censor then
-    # note (18/01): needs looking at before I can use it.
-    # hospitalised = hospital_admissions.where(hospital_admissions.all_diagnoses.contains(codelists.covidhosp))
-    # then add into the end_date definition below (or as a secondary end date for sensitivity analysis?)
 
     dataset.pt_start_date = case(
         when(registration.start_date + days(minimum_registration) > study_start_date).then(registration.start_date + days(minimum_registration)),
@@ -99,7 +91,19 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .except_where(covid_hospitalisations.admission_date >= end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
 
-    # vaccine code
+    # Any covid identification
+    primarycare_covid = clinical_events \
+        .where(clinical_events.ctv3_code.is_in(codelists.any_primary_care_code)) \
+        .except_where(clinical_events.date >= end_date - days(covid_to_longcovid_lag))
+
+    dataset.latest_primarycare_covid = primarycare_covid \
+        .sort_by(clinical_events.date) \
+        .last_for_patient().date
+
+    dataset.total_primarycare_covid = primarycare_covid \
+        .count_for_patient()
+
+    # vaccine code - get date of first 5 doses
     create_sequential_variables(
       dataset,
       "covid_vacc_{n}_adm",
@@ -121,17 +125,17 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
     dataset.last_vacc_gap = (dataset.pt_end_date - dataset.date_last_vacc).days
 
-    # dataset.vacc_1 = all_vacc.sort_by(all_vacc.date).first_for_patient().date
+    # get the date of each of the first 5 vaccinations for a patient
     create_sequential_variables(
       dataset,
       "covid_vacc_{n}_vacc_tab",
-      num_variables=6,
+      num_variables=5,
       events=all_vacc,
       column="date"
     )
 
     # Find the product name for each vaccine episode - will use this to check if they have all been the same or mixed types in analysis
-    # Note - only checking for first 3 vaccines in this step
+    # Note - only checking for first 2 vaccines in this step
     create_sequential_variables(
       dataset,
       "covid_vacc_{n}_manufacturer_tab",
@@ -139,6 +143,13 @@ def add_common_variables(dataset, study_start_date, end_date, population):
       events=all_vacc,
       column="product_name"
     )
+
+    # comorbidities
+    comorbidities = clinical_events \
+        .where(clinical_events.date <= dataset.pt_start_date - days(1)) \
+        .where(clinical_events.ctv3_code.is_in(codelists.comorbidities_codelist))
+
+    dataset.comorbid_count = comorbidities.count_for_patient()
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
     population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 18)  # will remove missing age
