@@ -5,12 +5,12 @@
 #' @return A dataframe containing new variables on number of vaccine doses and heterogeneous protection from first 2 doses
 
 tidy_vaccine_data <- function(dataset){
-  # convert no. vaccines to factor (0-6+)
+  # convert no. vaccines to factor (0-5+)
   df_full <- dataset %>%
     mutate(no_prev_vacc = cut(
       no_prev_vacc,
-      breaks = c(-Inf, 0:5, Inf),
-      labels = c(as.character(0:5), "6+")
+      breaks = c(-Inf, 0:4, Inf),
+      labels = c(as.character(0:4), "5+")
     )) 
   
   # create variable indicating whether all vaccines have been of same type
