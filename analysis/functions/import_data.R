@@ -71,7 +71,7 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
     # treat Long covid diagnosis (Dx) or referral (Rx) as a factor
     mutate(lc_dx_flag = factor(lc_dx_flag, levels = c("Dx", "Rx"))) %>% 
     # convert number of comorbidities to factor (0,1,2+)
-    mutate(comorbidites = cut(
+    mutate(comorbidities = cut(
       comorbid_count, 
       breaks = c(0,1,2, Inf),
       labels = c("0", "1", "2+"))
@@ -81,7 +81,7 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
     dplyr::select(patient_id, pt_start_date, pt_end_date, 
                   sex, age, age_centred, age_cat, 
                   practice_nuts, ethnicity, 
-                  imd_q5, comorbidites,
+                  imd_q5, comorbidities,
                   all_test_positive, no_prev_vacc, date_last_vacc, last_vacc_gap, 
                   contains("manufacturer"), first_lc_dx, lc_dx_flag, 
                   starts_with("covid_vacc_"),
