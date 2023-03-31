@@ -1,7 +1,7 @@
 version: '3.0'
 
 expectations:
- population_size: 1000
+ population_size: 20000
 
 actions:
 
@@ -37,7 +37,9 @@ actions:
     outputs: 
       highly_sensitive:
         cleandata: output/clean_dataset.gz.parquet 
-        timedata: output/timeupdate_dataset.gz.parquet
+        timedata_longcovid: output/timeupdate_dataset_lc_all.gz.parquet
+        timedata_longcovid_dx: output/timeupdate_dataset_lc_dx.gz.parquet
+        timedata_fracture: output/timeupdate_dataset_fracture.gz.parquet
       moderately_sensitive: 
         txt1: output/data_properties/clean_dataset_skim.txt
         txt2: output/data_properties/clean_dataset_tabulate.txt
@@ -50,7 +52,6 @@ actions:
     outputs:
       moderately_sensitive:
         cruderates: output/tab021_crude_lc_rates.csv
-        tuvrates:  output/tab022_tuv_lc_rates.csv
   
   plot_incidence:
     run: >
@@ -59,9 +60,11 @@ actions:
     needs: [clean_the_data]
     outputs:
       moderately_sensitive:
-        cuminc: output/fig1_cumulative_incidence.pdf
-        rawcountsplot: output/fig2_raw_counts_bysex.pdf
-  
+        cuminc: output/figures/fig1_cumulative_incidence.pdf
+        rawcountsplot: output/figures/fig2_raw_counts_line.pdf
+        rawcount: output/figures/fig2b_raw_counts_column.pdf
+        vaccinegap: output/supplementary/fig_agegap_vaccines.pdf
+
   poisson_rates:
     run: >
       r:latest
@@ -70,4 +73,14 @@ actions:
     outputs:
       moderately_sensitive:
         poissonrates: output/tab023_poissonrates.csv
-        irrplot: output/fig3_rate_ratios.pdf
+
+  poisson_plots:
+    run: >
+      r:latest
+        analysis/041_plot_poisson_results.R
+    needs: [poisson_rates]
+    outputs: 
+      moderately_sensitive: 
+        poissonplots_all: output/figures/fig3a_rate_ratios.pdf
+        poissonplots_lc: output/figures/fig3b_rate_ratios_longcovid.pdf
+        poissonplots_control: output/figures/fig3c_rate_ratios_controloutcome.pdf
