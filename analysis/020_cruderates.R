@@ -9,9 +9,6 @@ source(here::here("analysis/functions/ggplot_theme.R"))
 source(here::here("analysis/functions/calculate_rates.R"))
 source(here::here("analysis/functions/time_update_vaccinedoses.R"))
 
-# create folder to put plot in
-dir.create(here("output/supplementary/"), showWarnings = FALSE, recursive=TRUE)
-
 # import, combine, clean data -------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 

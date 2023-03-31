@@ -8,6 +8,10 @@ library(data.table)
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
 
+# create folders to put plots in
+dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
+dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
+
 # import data ------------------------------------------------------------
 time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_all.gz.parquet")) %>% 
   rename(lc_out = out)
