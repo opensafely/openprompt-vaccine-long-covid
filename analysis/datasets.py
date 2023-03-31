@@ -6,6 +6,7 @@ from databuilder.tables.beta.tpp import (
   practice_registrations,
   clinical_events,
   vaccinations,
+  ons_deaths,
   sgss_covid_all_tests,
   hospital_admissions
 )
@@ -61,7 +62,12 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.msoa = address_as_of(study_start_date).msoa_code
     dataset.practice_nuts = registration.practice_nuts1_region_name
     dataset.imd = address_as_of(study_start_date).imd_rounded
+
+    # death
     dataset.death_date = patients.date_of_death
+    ons_deathdata = ons_deaths \
+        .sort_by(ons_deaths.date).last_for_patient()
+    dataset.ons_death_date = ons_deathdata.date
 
     # Ethnicity in 6 categories
     dataset.ethnicity = clinical_events.where(clinical_events.ctv3_code.is_in(codelists.ethnicity)) \
