@@ -7,12 +7,12 @@ from databuilder.tables.beta import tpp as schema
 
 import codelists
 
-
-def has_prior_event(prior_events, codelist, where=True):
+def has_prior_event(date, codelist, events=schema.clinical_events, where=True):
+  prior_events = events.where(events.date.is_on_or_before(date))
   return (
-    prior_events.where(where)
-    .where(prior_events.snomedct_code.is_in(codelist))
-    .exists_for_patient()
+      prior_events.where(where)
+      .where(prior_events.snomedct_code.is_in(codelist))
+      .exists_for_patient()
   )
 
 
