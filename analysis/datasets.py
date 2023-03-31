@@ -14,6 +14,7 @@ import datetime
 from variable_lib import (
   age_as_of,
   has_died,
+  has_prior_event,
   address_as_of,
   create_sequential_variables,
   hospitalisation_diagnosis_matches
@@ -71,13 +72,13 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # covid tests
     dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
         .where(sgss_covid_all_tests.is_positive) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
+        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
         .sort_by(sgss_covid_all_tests.specimen_taken_date).last_for_patient().specimen_taken_date
 
     dataset.all_test_positive = sgss_covid_all_tests \
         .where(sgss_covid_all_tests.is_positive) \
         .except_where(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date >= end_date - days(covid_to_longcovid_lag)) \
+        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
 
     # covid hospitalisation
@@ -88,13 +89,13 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .first_for_patient().admission_date
 
     dataset.all_covid_hosp = covid_hospitalisations \
-        .except_where(covid_hospitalisations.admission_date >= end_date - days(covid_to_longcovid_lag)) \
+        .except_where(covid_hospitalisations.admission_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
 
     # Any covid identification
     primarycare_covid = clinical_events \
         .where(clinical_events.ctv3_code.is_in(codelists.any_primary_care_code)) \
-        .except_where(clinical_events.date >= end_date - days(covid_to_longcovid_lag))
+        .except_where(clinical_events.date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
 
     dataset.latest_primarycare_covid = primarycare_covid \
         .sort_by(clinical_events.date) \
@@ -115,7 +116,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # Vaccines from the vaccines schema
     # only take one record per day to remove duplication
     all_vacc = vaccinations \
-        .where(vaccinations.date < end_date - days(vaccine_to_longcovid_lag)) \
+        .where(vaccinations.date < dataset.pt_end_date - days(vaccine_to_longcovid_lag)) \
         .where(vaccinations.target_disease == "SARS-2 CORONAVIRUS")
 
     # this will be replaced with distinct_count_for_patient() once it is developed
@@ -125,24 +126,36 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
     dataset.last_vacc_gap = (dataset.pt_end_date - dataset.date_last_vacc).days
 
-    # get the date of each of the first 5 vaccinations for a patient
-    create_sequential_variables(
-      dataset,
-      "covid_vacc_{n}_vacc_tab",
-      num_variables=5,
-      events=all_vacc,
-      column="date"
-    )
+    # FIRST VACCINE DOSE ------------------------------------------------------------
+    # first vaccine dose was 8th December 2020
+    vaccine_dose_1 = all_vacc \
+        .where(all_vacc.date.is_after(datetime.date(2020, 12, 7))) \
+        .sort_by(all_vacc.date) \
+        .first_for_patient()
+    dataset.vaccine_dose_1_date = vaccine_dose_1.date
+    dataset.vaccine_dose_1_manufacturer = vaccine_dose_1.product_name
 
-    # Find the product name for each vaccine episode - will use this to check if they have all been the same or mixed types in analysis
-    # Note - only checking for first 2 vaccines in this step
-    create_sequential_variables(
-      dataset,
-      "covid_vacc_{n}_manufacturer_tab",
-      num_variables=2,
-      events=all_vacc,
-      column="product_name"
-    )
+    # SECOND VACCINE DOSE ------------------------------------------------------------
+    # first recorded 2nd dose was 29th December 2020
+    # need a 19 day gap from first dose
+    vaccine_dose_2 = all_vacc \
+        .where(all_vacc.date.is_after(datetime.date(2020, 12, 28))) \
+        .where(all_vacc.date.is_after(dataset.vaccine_dose_1_date + days(19))) \
+        .sort_by(all_vacc.date) \
+        .first_for_patient()
+    dataset.vaccine_dose_2_date = vaccine_dose_2.date
+    dataset.vaccine_dose_2_manufacturer = vaccine_dose_2.product_name
+
+    # BOOSTER VACCINE DOSE -----------------------------------------------------------
+    # first recorded booster dose was 2021-09-24
+    # need a 56 day gap from first dose (conservative)
+    vaccine_dose_3 = all_vacc \
+        .where(all_vacc.date.is_after(datetime.date(2021, 9, 23))) \
+        .where(all_vacc.date.is_after(dataset.vaccine_dose_2_date + days(56))) \
+        .sort_by(all_vacc.date) \
+        .first_for_patient()
+    dataset.vaccine_dose_3_date = vaccine_dose_3.date
+    dataset.vaccine_dose_3_manufacturer = vaccine_dose_3.product_name
 
     # comorbidities
     comorbidities = clinical_events \
@@ -150,6 +163,23 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .where(clinical_events.ctv3_code.is_in(codelists.comorbidities_codelist))
 
     dataset.comorbid_count = comorbidities.count_for_patient()
+
+    # negative control - hospital fractures
+    fracture_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_fractures)
+
+    dataset.first_fracture_hosp = fracture_hospitalisations \
+        .where(fracture_hospitalisations.admission_date.is_between(study_start_date, end_date)) \
+        .sort_by(fracture_hospitalisations.admission_date) \
+        .first_for_patient().admission_date
+
+    # care home flag
+    dataset.care_home = address_as_of(dataset.pt_start_date) \
+        .care_home_is_potential_match.if_null_then(False)
+
+    dataset.care_home_nursing = address_as_of(dataset.pt_start_date) \
+        .care_home_requires_nursing.if_null_then(False)
+
+    dataset.care_home_code = has_prior_event(dataset.pt_start_date, codelists.care_home_flag)
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
     population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 18)  # will remove missing age
