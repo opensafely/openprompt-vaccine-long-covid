@@ -269,6 +269,18 @@
       "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/e_boost_cod/v.1.5.3/",
       "downloaded_at": "2022-11-15 18:08:04.204354Z",
       "sha": "31b9ea185de5f23974d3f6a355970503a44a2fe1"
+    },
+    "opensafely-fracture-potential-emergency-opcs-codes.csv": {
+      "id": "opensafely/fracture-potential-emergency-opcs-codes/6aac6aa1",
+      "url": "https://codelists.opensafely.org/codelist/opensafely/fracture-potential-emergency-opcs-codes/6aac6aa1/",
+      "downloaded_at": "2023-03-28 09:56:25.314702Z",
+      "sha": "1a2af0b57026608c37a41884f81f259a6366b291"
+    },
+    "nhsd-primary-care-domain-refsets-carehome_cod.csv": {
+      "id": "nhsd-primary-care-domain-refsets/carehome_cod/5d2f363a",
+      "url": "https://codelists.opensafely.org/codelist/nhsd-primary-care-domain-refsets/carehome_cod/5d2f363a/",
+      "downloaded_at": "2023-03-30 15:59:23.407898Z",
+      "sha": "11a75f8c271f6cd05276f49b038fbda8dfab77fe"
     }
   }
 }

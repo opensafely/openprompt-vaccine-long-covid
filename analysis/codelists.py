@@ -196,3 +196,13 @@ comorbidities_codelist = (
     permanent_immune_codes +
     temp_immune_codes
 )
+
+hosp_fractures = codelist_from_csv(
+    "codelists/opensafely-fracture-potential-emergency-opcs-codes.csv",
+    column="Code"
+)
+
+care_home_flag = codelist_from_csv(
+    "codelists/nhsd-primary-care-domain-refsets-carehome_cod.csv",
+    column="code"
+)
