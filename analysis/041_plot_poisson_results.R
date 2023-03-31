@@ -4,6 +4,7 @@ library(lubridate)
 library(here)
 
 source(here::here("analysis/functions/redaction.R"))
+source(here::here("analysis/functions/ggplot_theme.R"))
 
 adjusted_rates_out <- read_csv("output/tab023_poissonrates.csv")
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
