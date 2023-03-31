@@ -9,36 +9,161 @@ tidy_vaccine_data <- function(dataset){
   df_full <- dataset %>%
     mutate(no_prev_vacc = cut(
       no_prev_vacc,
-      breaks = c(-Inf, 0:4, Inf),
-      labels = c(as.character(0:4), "5+")
+      breaks = c(-Inf, 0:3, Inf),
+      labels = c(as.character(0:3), "4+")
     )) 
   
   # create variable indicating whether all vaccines have been of same type
-  mix_and_match_vacc <- df_full %>% 
-    dplyr::select(patient_id, contains("manufacturer_tab")) %>% 
-    pivot_longer(cols = -patient_id, names_to = "vacc_episode", names_pattern = "covid_vacc_(.)_manufacturer_tab", values_to = "manufacturer") %>%
-    drop_na() %>% 
-    mutate(mRNA = stringr::str_detect(manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer")) %>% 
-    group_by(patient_id) %>% 
-    mutate(mix_and_match = n_distinct(mRNA)!=1) %>% 
-    slice(1)
-  
-  # merge these back on
-  df_full <- df_full %>% 
-    left_join(
-      dplyr::select(mix_and_match_vacc, patient_id, mRNA, mix_and_match)
-    ) %>% 
-    mutate("mix_and_match" = factor(
-      case_when(
-        no_prev_vacc == 0 ~ 0,
-        no_prev_vacc == 1 ~ 1,
-        mix_and_match == FALSE ~ 2,
-        mix_and_match == TRUE ~ 3,
-        is.na(mix_and_match) ~ 4
+  mix_and_match_vacc_interim <- df_full %>% 
+    dplyr::select(patient_id, contains("manufacturer")) %>% 
+    mutate(mRNA1 = stringr::str_detect(vaccine_dose_1_manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer"),
+           mRNA2 = stringr::str_detect(vaccine_dose_2_manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer"),
+           mRNA3 = stringr::str_detect(vaccine_dose_3_manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer")) %>% 
+    # calculate different combinations of first 3 doses 
+    mutate(
+      one_dose = case_when(
+        is.na(mRNA2) ~ TRUE, 
+        !is.na(mRNA2) ~ FALSE
       ),
-      levels = c(0:4), 
-      labels = c("No vaccine", "One dose only", "Homologous", "Heterologeous", "Missing manufacturer info")
-    ))
+      m_m_twodose = case_when(
+        mRNA1 & mRNA2   ~ TRUE,
+        mRNA1 & !mRNA2  ~ FALSE,
+        !mRNA1 & mRNA2  ~ FALSE,
+        !mRNA1 & !mRNA2 ~ FALSE
+      ),
+      non_non_twodose = case_when(
+        mRNA1 & mRNA2   ~ FALSE,
+        mRNA1 & !mRNA2  ~ FALSE,
+        !mRNA1 & mRNA2  ~ FALSE,
+        !mRNA1 & !mRNA2 ~ TRUE
+      ),
+      mix_twodose = case_when(
+        mRNA1 & !mRNA2   ~ TRUE,
+        !mRNA1 & mRNA2  ~ TRUE,
+        !mRNA1 & !mRNA2  ~ FALSE,
+        mRNA1 & mRNA2 ~ FALSE
+      ),
+      m_boost_nonprior = case_when(
+        mRNA3  & non_non_twodose ~ TRUE,
+        !mRNA3 ~ FALSE
+      ),
+      nonm_boost_mprior = case_when(
+        !mRNA3  & m_m_twodose ~ TRUE,
+        mRNA3 ~ FALSE
+      ),
+      homologous_m_boost = case_when(
+        mRNA3 & m_m_twodose ~ TRUE
+      ),
+      homologous_n_boost = case_when(
+        !mRNA3 & non_non_twodose ~ TRUE
+      ),
+      vaccine_schedule = case_when(
+        one_dose ~ "1 dose", 
+        m_m_twodose & is.na(mRNA3) ~ "2 dose: mRNA", 
+        non_non_twodose & is.na(mRNA3) ~ "2 dose: non-mRNA",
+        mix_twodose & is.na(mRNA3) ~ "2 dose: heterologous",
+        homologous_m_boost ~ "3 dose: homologous (mRNA) booster",
+        homologous_n_boost ~ "3 dose: homologous (non-mRNA) booster",
+        m_boost_nonprior ~ "3 dose: heterologous (mRNA) booster",
+        nonm_boost_mprior ~ "3 dose: heterologous (non-mRNA) booster",
+        mix_twodose & !is.na(mRNA3) ~ "3 dose: booster on mixed initial"
+      )
+    )
   
-  df_full %>% ungroup()
+  mix_and_match_vacc_interim <- mix_and_match_vacc_interim %>% 
+    mutate(
+      vaccine_schedule_detail = factor(
+        vaccine_schedule,
+        levels = c("1 dose",
+                   "2 dose: mRNA",
+                   "2 dose: non-mRNA",
+                   "2 dose: heterologous",
+                   "3 dose: homologous (mRNA) booster",
+                   "3 dose: homologous (non-mRNA) booster",
+                   "3 dose: heterologous (mRNA) booster",
+                   "3 dose: heterologous (non-mRNA) booster",
+                   "3 dose: booster on mixed initial"
+        )),
+      vaccine_schedule_grouped = factor(
+        vaccine_schedule,
+        levels = c("1 dose",
+                   "2 dose: mRNA",
+                   "2 dose: non-mRNA",
+                   "2 dose: heterologous",
+                   "3 dose: homologous (mRNA) booster",
+                   "3 dose: homologous (non-mRNA) booster",
+                   "3 dose: heterologous (mRNA) booster",
+                   "3 dose: heterologous (non-mRNA) booster",
+                   "3 dose: booster on mixed initial"
+        ),
+        labels = c("1 dose",
+                   "2 dose: homologous",
+                   "2 dose: homologous",
+                   "2 dose: heterologous",
+                   "3 dose: homologous",
+                   "3 dose: homologous",
+                   "3 dose: heterologous",
+                   "3 dose: heterologous",
+                   "3 dose: heterologous"
+        )),
+      vaccine_schedule_twodose_detail = factor(
+        vaccine_schedule,
+        levels = c("1 dose",
+                   "2 dose: mRNA",
+                   "2 dose: non-mRNA",
+                   "2 dose: heterologous",
+                   "3 dose: homologous (mRNA) booster",
+                   "3 dose: homologous (non-mRNA) booster",
+                   "3 dose: heterologous (mRNA) booster",
+                   "3 dose: heterologous (non-mRNA) booster",
+                   "3 dose: booster on mixed initial"
+        ),
+        labels = c("1 dose",
+                   "2 dose: mRNA",
+                   "2 dose: non-mRNA",
+                   "2 dose: heterologous",
+                   # at 2 doses, this gorup had mrna only
+                   "2 dose: mRNA",
+                   # at 2 doses, this gorup had non-mrna only
+                   "2 dose: non-mRNA",
+                   # at 2 doses, this gorup had non-mrna only (then got a mRNA booster)
+                   "2 dose: non-mRNA",
+                   # at 2 doses, this gorup had mrna only (then got a non-mRNA booster)
+                   "2 dose: mRNA",
+                   "2 dose: heterologous"
+        )),
+      vaccine_schedule_twodose_grouped = factor(
+        vaccine_schedule,
+        levels = c("1 dose",
+                   "2 dose: mRNA",
+                   "2 dose: non-mRNA",
+                   "2 dose: heterologous",
+                   "3 dose: homologous (mRNA) booster",
+                   "3 dose: homologous (non-mRNA) booster",
+                   "3 dose: heterologous (mRNA) booster",
+                   "3 dose: heterologous (non-mRNA) booster",
+                   "3 dose: booster on mixed initial"
+        ),
+        labels = c("1 dose",
+                   "2 dose: homologous",
+                   "2 dose: homologous",
+                   "2 dose: heterologous",
+                   # at 2 doses, this gorup had mrna only
+                   "2 dose: homologous",
+                   # at 2 doses, this gorup had non-mrna only
+                   "2 dose: homologous",
+                   # at 2 doses, this gorup had non-mrna only (then got a mRNA booster)
+                   "2 dose: homologous",
+                   # at 2 doses, this gorup had mrna only (then got a non-mRNA booster)
+                   "2 dose: homologous",
+                   "2 dose: heterologous"
+        )),
+    ) %>% 
+    dplyr::select(-vaccine_schedule)
+  
+  df_full %>% 
+    left_join(
+      dplyr::select(mix_and_match_vacc_interim, patient_id, starts_with("vaccine_schedule"))
+    ) %>% 
+    ungroup()
 }

@@ -1,44 +1,72 @@
 #' Time update on date of vaccine dose
 #' @description Takes a flat 1-row-per-patient file and time updates on the date of vaccine dosage 
 #' @param data data to be time updated
-#' @param controls_path File path for the file containing controls data
+#' @param outcome_var A date variable with the date of the Outcome event
 #' @return A dataframe containing time updated data 
 
-time_update_vaccinedoses <- function(data){
+time_update_vaccinedoses <- function(data, outcome_var){
   # remove anyone who starts and ends on the same date 
-  df_vacc_base <- data %>% 
-    filter(t>0) 
-  
-  # ignoring vaccine records from admin records and only using vaccination table results for now (no diagnosis records)
-  # only includes first 6 vaccinations (check `datasets.py` for the `create_sequential_variables` functino that generates these data)
-  df_vacc_long <- data %>% 
+  small_base <- data %>% 
+    dplyr::select(patient_id, starts_with("pt_"), contains("age"), sex, {{outcome_var}}) %>% 
+    rename(outcome = {{outcome_var}}) %>%
+    mutate(
+      new_end_date =  as.Date(
+        ifelse(!is.na(outcome) & outcome < pt_end_date,
+               outcome, pt_end_date),
+        origin = "1970-01-01"
+      ),
+      t = pt_start_date %--% new_end_date / dyears(1),
+      outcome_binary = as.numeric(!is.na(outcome))
+    ) %>% 
+    filter(t>0)
+
+  # calculate time difference for each vaccine dose
+  df_vacc_base_t <- data %>% 
     filter(t>0) %>% 
-    dplyr::select(patient_id, pt_start_date, starts_with("covid_vacc_"), mix_and_match) %>% 
-    dplyr::select(!contains("adm")) %>%  
-    pivot_longer(cols = contains("vacc_tab"), names_to = "vacc_no", names_pattern = "covid_vacc_(.)_vacc_tab", values_to = "date") %>% 
-    mutate(t = pt_start_date %--% date / dyears(1)) %>% 
-    # get the date of the second vaccine for everyone (for time updating the mixmatch variable)
-    mutate_at("mix_and_match", ~ifelse(vacc_no < 2 & . != "No vaccine", 2, .)) 
+    select(patient_id, pt_start_date, contains("vaccine_dose_"), contains("vaccine_schedule_")) %>% 
+    mutate(vacc_time_1 = pt_start_date %--% vaccine_dose_1_date / dyears(1),
+           vacc_time_2 = pt_start_date %--% vaccine_dose_2_date / dyears(1),
+           vacc_time_3 = pt_start_date %--% vaccine_dose_3_date / dyears(1),
+           vaccine_schedule_2d  = ifelse(!is.na(vaccine_dose_2_date), as.character(vaccine_schedule_twodose_detail), NA),
+           vaccine_schedule_2g  = ifelse(!is.na(vaccine_dose_2_date), as.character(vaccine_schedule_twodose_grouped), NA),
+           vaccine_schedule_3d = ifelse(!is.na(vaccine_dose_3_date), as.character(vaccine_schedule_detail), NA),
+           vaccine_schedule_3g = ifelse(!is.na(vaccine_dose_3_date), as.character(vaccine_schedule_grouped), NA)
+           ) %>% 
+    dplyr::select(-contains("vaccine_dose")) %>% 
+    pivot_longer(cols = starts_with("vacc_time_"), names_to = "vacc_no", names_pattern = "vacc_time_(.)", values_to = "years")
+  data <- NULL
+
+  # create new time-updated version of homologous/heterologous vaccine dose - need two versions of a time-updated variable (one with detail, one grouped by homo/hetero)
+  vaccines_schedule_timeupdate <- df_vacc_base_t %>% 
+    filter(!is.na(years)) 
+  vaccines_schedule_timeupdate$vaccine_schedule_detail[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
+  vaccines_schedule_timeupdate$vaccine_schedule_grouped[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
+  vaccines_schedule_timeupdate$vaccine_schedule_twodose_grouped[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
   
-  # if this gap is negative then the vaccine was delivered pre-study enrol so set t = 0
-  df_vacc_long$t[df_vacc_long$t < 0] <- 0 
+  vaccines_schedule_timeupdate$vaccine_schedule_detail[vaccines_schedule_timeupdate$vacc_no == "2"] <- as.character(vaccines_schedule_timeupdate$vaccine_schedule_2d[vaccines_schedule_timeupdate$vacc_no == "2"])
+  vaccines_schedule_timeupdate$vaccine_schedule_grouped[vaccines_schedule_timeupdate$vacc_no == "2"] <- as.character(vaccines_schedule_timeupdate$vaccine_schedule_2g[vaccines_schedule_timeupdate$vacc_no == "2"])
+  vaccines_schedule_timeupdate$vaccine_schedule_twodose_grouped[vaccines_schedule_timeupdate$vacc_no == "2"] <- as.character(vaccines_schedule_timeupdate$vaccine_schedule_2g[vaccines_schedule_timeupdate$vacc_no == "2"])
   
-  df_vacc_timeupdated <- df_vacc_base %>% 
-    survival::tmerge(df_vacc_base, id = patient_id, lc_out = event(t, lc_out)) %>% 
-    survival::tmerge(df_vacc_long, id = patient_id, vaccines = tdc(t, vacc_no, 0)) %>% 
-    survival::tmerge(df_vacc_long, id = patient_id, t_mixmatch = tdc(t, mix_and_match, 1)) %>% 
-    mutate(vaccines = factor(vaccines)) %>% 
-    mutate(t_mixmatch = factor(t_mixmatch, 
-                         levels = 1:6,
-                         labels = c(
-                           "No vaccine",
-                           "One dose only",
-                           "Homologous",
-                           "Heterologeous",
-                           "Missing manufacturer info",
-                           "Fewer than 2 doses"
-                         )))
+  # create the survival dataset 
+  survivaldata <- survival::tmerge(small_base, small_base, id = patient_id, out = event(t, outcome_binary)) 
+  newsurvival <- survival::tmerge(survivaldata, df_vacc_base_t, id = patient_id, vaccines = tdc(years, vacc_no, 0)) 
   
-  df_vacc_timeupdated %>% 
-    dplyr::select(-starts_with("covid_vacc_"))
+  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_detail = tdc(years, vaccine_schedule_detail, "No vaccine")) 
+  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_grouped = tdc(years, vaccine_schedule_grouped, "No vaccine")) 
+  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_twodose = tdc(years, vaccine_schedule_twodose_grouped, "No vaccine")) 
+  
+  newsurvival %>% 
+    select(-outcome_binary, -pt_end_date) %>% 
+    rename(pt_end_date = new_end_date) %>% 
+    mutate(vaccines = factor(vaccines,
+                             levels = 0:3, 
+                             labels = c("0","1","2","3+"))) %>% 
+    mutate(t_vacc_detail = factor(t_vacc_detail, 
+                               levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_detail))),
+           t_vacc_grouped = factor(t_vacc_grouped, 
+                                  levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_grouped))),
+           t_vacc_twodose = factor(t_vacc_twodose, 
+                                   levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_grouped))),
+           t = tstop - tstart
+    )
 }
