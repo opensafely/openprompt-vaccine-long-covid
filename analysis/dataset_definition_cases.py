@@ -16,11 +16,11 @@ first_lc_dx_code = lc_dx_code.sort_by(lc_dx_code.date).first_for_patient()
 # use the record of a patient's long covid on Dx (even if they had a Rx earlier)
 first_lc_code = first_lc_code_any
 first_lc_code.best_date = case(
-    when((first_lc_code_any.date - first_lc_dx_code.date).days > 0).then(first_lc_dx_code.date),
+    when((first_lc_code_any.date - first_lc_dx_code.date).days < 0).then(first_lc_dx_code.date),
     default=first_lc_code_any.date
 )
 first_lc_code.best_code = case(
-    when((first_lc_code_any.date - first_lc_dx_code.date).days > 0).then(first_lc_dx_code.snomedct_code),
+    when((first_lc_code_any.date - first_lc_dx_code.date).days < 0).then(first_lc_dx_code.snomedct_code),
     default=first_lc_code_any.snomedct_code
 )
 
@@ -35,7 +35,9 @@ lc_dx_flag = case(
 add_common_variables(dataset, study_start_date, first_lc_code.best_date, population=first_lc_code.exists_for_patient())
 
 # add specfic variables
-dataset.first_lc_dx = first_lc_code.best_date
+dataset.first_lc = first_lc_code.best_date
+dataset.test_to_lc_gap = (first_lc_code.best_date - dataset.latest_test_before_diagnosis).days
+dataset.vacc_to_lc_gap = (first_lc_code.best_date - dataset.date_last_vacc).days
+
+dataset.first_lc_dx = first_lc_dx_code.date
 dataset.lc_dx_flag = lc_dx_flag
-dataset.test_to_lc_dx_gap = (first_lc_code.best_date - dataset.latest_test_before_diagnosis).days
-dataset.vacc_to_lc_dx_gap = (first_lc_code.best_date - dataset.date_last_vacc).days
