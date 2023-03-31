@@ -11,17 +11,24 @@ calculate_rates <- function(data, grouping_var){
     summarise(
       n = n(), 
       lc = sum(lc_out),
+      lc_dx = sum(lc_dx_only),
+      n_rx = sum(lc_dx_flag == "Rx", na.rm = TRUE),
+      n_fratures = sum(fracture),
       fup = sum(t),
       total_tests = sum(all_test_positive),
-      avg_last_vacc = mean(last_vacc_gap, na.rm = TRUE),
-      n_dx = sum(lc_dx_flag == "Dx", na.rm = TRUE),
-      n_rx = sum(lc_dx_flag == "Rx", na.rm = TRUE)
+      avg_last_vacc = mean(last_vacc_gap, na.rm = TRUE)
     ) %>% 
     mutate(rate_per1e5 = (lc/fup)*1e5,
            se_rate = (sqrt(lc)/fup)*1e5,
            errorfactor = exp(1.96/sqrt(lc)),
            lci = rate_per1e5/errorfactor,
            uci = rate_per1e5*errorfactor) %>% 
+    # calculate rates using only Long Covid diagnoses 
+    mutate(rate_per1e5_dx = (lc_dx/fup)*1e5,
+           se_rate_dx = (sqrt(lc_dx)/fup)*1e5,
+           errorfactor_dx = exp(1.96/sqrt(lc_dx)),
+           lci_dx = rate_per1e5_dx/errorfactor_dx,
+           uci_dx = rate_per1e5_dx*errorfactor_dx) %>% 
     arrange({{grouping_var}}) %>% 
     mutate(stratifier = stringr::str_c(enexpr(grouping_var)),
            level = as.character({{grouping_var}})) %>% 
@@ -40,7 +47,7 @@ apply_rates_over_stratifiers <- function(data){
     calculate_rates(data, grouping_var = sex),
     calculate_rates(data, grouping_var = age_cat),
     calculate_rates(data, grouping_var = no_prev_vacc),
-    calculate_rates(data, grouping_var = mix_and_match),
+    calculate_rates(data, grouping_var = vaccine_schedule_grouped),
     calculate_rates(data, grouping_var = practice_nuts),
     calculate_rates(data, grouping_var = imd_q5),
     calculate_rates(data, grouping_var = comorbidities),
