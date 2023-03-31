@@ -51,6 +51,7 @@ apply_rates_over_stratifiers <- function(data){
     calculate_rates(data, grouping_var = practice_nuts),
     calculate_rates(data, grouping_var = imd_q5),
     calculate_rates(data, grouping_var = comorbidities),
+    calculate_rates(data, grouping_var = highrisk_shield),
     calculate_rates(data, grouping_var = ethnicity)
   )
 }

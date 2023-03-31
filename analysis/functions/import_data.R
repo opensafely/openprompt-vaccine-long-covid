@@ -86,6 +86,7 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
                   practice_nuts, ethnicity, 
                   imd_q5, comorbidities,
                   care_home, care_home_nursing, care_home_code,
+                  highrisk_shield, lowrisk_shield,
                   ons_death_date, death_date,
                   all_test_positive, no_prev_vacc, date_last_vacc, last_vacc_gap,
                   first_covid_hosp, all_covid_hosp,

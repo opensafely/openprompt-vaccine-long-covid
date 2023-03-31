@@ -14,7 +14,7 @@ cols <- hcl.colors(20, palette = "Viridis")[c(1,10,18)]
 names(cols) <- outcome_list
 
 # plot adjusted rates -----------------------------------------------------
-pdf(here("output/figures/fig3a_rate_ratios.pdf"), width = 12, height = 12)
+pdf(here("output/figures/fig3a_rate_ratios.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
 adjusted_rates_out %>% 
   filter(plot_marker, std_error < 1) %>% 
@@ -23,7 +23,7 @@ adjusted_rates_out %>%
   geom_linerange(lwd = 1, alpha = 0.8, position = pd) +
   geom_hline(yintercept = 1, lty = 2) +  # add a dotted line at x=1 after flip
   coord_flip() +
-  facet_wrap(~strat_var, scales = "free") + 
+  facet_wrap(~strat_var, scales = "free", ncol = 3) + 
   labs(y = "Incidence Rate Ratio (95% CI)", x = "") +
   scale_color_manual(outcome_list, values = cols) +
   theme_ali() +
@@ -31,7 +31,7 @@ adjusted_rates_out %>%
         strip.background = element_blank())
 dev.off()
 
-pdf(here("output/figures/fig3b_rate_ratios_longcovid.pdf"), width = 12, height = 12)
+pdf(here("output/figures/fig3b_rate_ratios_longcovid.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
 adjusted_rates_out %>% 
   filter(plot_marker, std_error < 1) %>% 
@@ -41,7 +41,7 @@ adjusted_rates_out %>%
   geom_linerange(lwd = 0.75, position = pd) +
   geom_hline(yintercept = 1, lty = 2) +  # add a dotted line at x=1 after flip
   coord_flip() +
-  facet_wrap(~strat_var, scales = "free") + 
+  facet_wrap(~strat_var, scales = "free", ncol = 3) + 
   labs(y = "Incidence Rate Ratio (95% CI)", x = "") +
   scale_color_manual(outcome_list, values = cols) +
   theme_ali() +
@@ -49,7 +49,7 @@ adjusted_rates_out %>%
         strip.background = element_blank())
 dev.off()
 
-pdf(here("output/figures/fig3c_rate_ratios_controloutcome.pdf"), width = 12, height = 12)
+pdf(here("output/figures/fig3c_rate_ratios_controloutcome.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
 adjusted_rates_out %>% 
   filter(plot_marker, std_error < 1) %>% 
@@ -59,7 +59,7 @@ adjusted_rates_out %>%
   geom_linerange(lwd = 1, alpha = 0.8, position = pd) +
   geom_hline(yintercept = 1, lty = 2) +  # add a dotted line at x=1 after flip
   coord_flip() +
-  facet_wrap(~strat_var, scales = "free") + 
+  facet_wrap(~strat_var, scales = "free", ncol = 3) + 
   labs(y = "Incidence Rate Ratio (95% CI)", x = "") +
   scale_color_manual(outcome_list, values = cols) +
   theme_ali() +

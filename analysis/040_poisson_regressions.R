@@ -19,8 +19,8 @@ adjusted_rates_t_lc_all <- map(stratifiers_t, ~poisson_regressions(cohort_data =
 adjusted_rates_t_lc_dx <- map(stratifiers_t, ~poisson_regressions(cohort_data = time_data_lc_dx, .x))
 adjusted_rates_t_frac <- map(stratifiers_t, ~poisson_regressions(cohort_data = time_data_frac, .x))
 
-stratifiers <- c("sex","age_cat", "practice_nuts", "ethnicity", "comorbidities")
-strat_plot_names <- c("Sex","Age category", "Region", "Ethnicity", "Comorbidities")
+stratifiers <- c("sex","age_cat", "practice_nuts", "ethnicity", "comorbidities", "highrisk_shield")
+strat_plot_names <- c("Sex","Age category", "Region", "Ethnicity", "Comorbidities", "Shielding (high risk group)")
   cleaned_data$out <- cleaned_data$lc_out
 adjusted_rates_c_lc_all <- map(stratifiers, ~poisson_regressions(cohort_data = cleaned_data, .x))
   cleaned_data$out <- as.numeric(!is.na(cleaned_data$first_lc_dx))

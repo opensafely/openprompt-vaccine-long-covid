@@ -281,6 +281,18 @@
       "url": "https://codelists.opensafely.org/codelist/nhsd-primary-care-domain-refsets/carehome_cod/5d2f363a/",
       "downloaded_at": "2023-03-30 15:59:23.407898Z",
       "sha": "11a75f8c271f6cd05276f49b038fbda8dfab77fe"
+    },
+    "primis-covid19-vacc-uptake-nonshield.csv": {
+      "id": "primis-covid19-vacc-uptake/nonshield/19362df7",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/nonshield/19362df7/",
+      "downloaded_at": "2023-03-31 16:26:14.131691Z",
+      "sha": "fb1e019781d5a58c5512d71e9cd6cf47c05e72c5"
+    },
+    "primis-covid19-vacc-uptake-shield.csv": {
+      "id": "primis-covid19-vacc-uptake/shield/34f86122",
+      "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/shield/34f86122/",
+      "downloaded_at": "2023-03-31 16:26:14.248903Z",
+      "sha": "7edf08877d201478d4f794edb4d4dfe1353cb095"
     }
   }
 }

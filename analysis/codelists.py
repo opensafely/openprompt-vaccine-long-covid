@@ -206,3 +206,13 @@ care_home_flag = codelist_from_csv(
     "codelists/nhsd-primary-care-domain-refsets-carehome_cod.csv",
     column="code"
 )
+
+high_risk_shield = codelist_from_csv(
+    "codelists/primis-covid19-vacc-uptake-shield.csv",
+    column="code"
+)
+
+low_risk_shield = codelist_from_csv(
+    "codelists/primis-covid19-vacc-uptake-nonshield.csv",
+    column="code"
+)

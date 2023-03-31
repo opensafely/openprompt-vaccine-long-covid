@@ -187,6 +187,10 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     dataset.care_home_code = has_prior_event(dataset.pt_start_date, codelists.care_home_flag)
 
+    # shielding data
+    dataset.highrisk_shield = has_prior_event(dataset.pt_start_date, codelists.high_risk_shield)
+    dataset.lowrisk_shield = has_prior_event(dataset.pt_start_date, codelists.low_risk_shield)
+
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
     population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 18)  # will remove missing age
 
