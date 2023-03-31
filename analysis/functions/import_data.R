@@ -19,8 +19,11 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
     mutate(
       # create time variable for follow up (years)
       t =  pt_start_date %--% pt_end_date / dyears(1),
+      # Outcome variables
       # convert first Long COVID record date into numeric 1,0 variable
-      lc_out = as.numeric(!is.na(first_lc_dx)),
+      lc_out = as.numeric(!is.na(first_lc)),
+      lc_dx_only = as.numeric(!is.na(first_lc_dx)),
+      fracture = as.numeric(!is.na(first_fracture_hosp)),
       # convert gap between most recent vaccine and LC record into years
       last_vacc_gap = last_vacc_gap / 365.25,
       # convert IMD to quintiles
@@ -82,9 +85,10 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
                   sex, age, age_centred, age_cat, 
                   practice_nuts, ethnicity, 
                   imd_q5, comorbidities,
+                  care_home, care_home_nursing, care_home_code,
                   all_test_positive, no_prev_vacc, date_last_vacc, last_vacc_gap, 
-                  contains("manufacturer"), first_lc_dx, lc_dx_flag, 
-                  starts_with("covid_vacc_"),
-                  t, lc_out
+                  starts_with("vaccine_dose_"),
+                  first_lc, first_lc_dx, lc_dx_flag, first_fracture_hosp,
+                  t, lc_out, lc_dx_only, fracture
                   )
 }

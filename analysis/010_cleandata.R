@@ -15,18 +15,32 @@ controls_data_path <- here("output/dataset_controls.csv.gz")
 imported_data <-
   import_and_combine(cases_path = cases_data_path, controls_path = controls_data_path)
 
-cleaned_data <- tidy_vaccine_data(imported_data)
+# need these manual overrides with the dummy data
+#imported_data$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date) & is.na(imported_data$vaccine_dose_1_manufacturer)] <- "test"
+#imported_data$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date) & is.na(imported_data$vaccine_dose_2_manufacturer)] <- "test"
+#imported_data$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date) & is.na(imported_data$vaccine_dose_3_manufacturer)] <- "test"
 
+cleaned_data <- tidy_vaccine_data(imported_data)
 arrow::write_parquet(cleaned_data, 
                      sink = here::here("output/clean_dataset.gz.parquet"),
                      compression = "gzip", compression_level = 5)
 
-
 # time update vaccine data ------------------------------------------------
-time_data <- time_update_vaccinedoses(cleaned_data)
+# main outcome (any long covid code)
+time_data_lc_all <- time_update_vaccinedoses(cleaned_data, first_lc)
+arrow::write_parquet(time_data_lc_all, 
+                     sink = here::here("output/timeupdate_dataset_lc_all.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
 
-arrow::write_parquet(time_data, 
-                     sink = here::here("output/timeupdate_dataset.gz.parquet"),
+# Long COVID Dx only
+time_data_lc_dx <- time_update_vaccinedoses(cleaned_data, first_lc_dx)
+arrow::write_parquet(time_data_lc_dx, 
+                     sink = here::here("output/timeupdate_dataset_lc_dx.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+
+time_data_fracture <- time_update_vaccinedoses(cleaned_data, first_fracture_hosp)
+arrow::write_parquet(time_data_fracture, 
+                     sink = here::here("output/timeupdate_dataset_fracture.gz.parquet"),
                      compression = "gzip", compression_level = 5)
 
 # skimr to print a summary of the data ------------------------------------
