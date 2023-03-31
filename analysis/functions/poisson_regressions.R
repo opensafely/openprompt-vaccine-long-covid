@@ -13,8 +13,8 @@ poisson_regressions <- function(cohort_data, stratifier) {
     n_distinct()
   
   if (number_levels > 1) {
-    fm1 <- formula(paste("lc_out ~ offset(log(t/1e5)) + ", stratifier))
-    fm2 <- formula(paste("lc_out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex"))
+    fm1 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier))
+    fm2 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex"))
     
     # remove a lot of the memory intensive fat from the model object but keep necessary bits to predict rates
     shrink_glm_mem <- function(glm_fitted) {
