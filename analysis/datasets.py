@@ -17,13 +17,14 @@ from variable_lib import (
   has_died,
   has_prior_event,
   address_as_of,
+  has_prior_event_ctv3_numeric,
   create_sequential_variables,
   hospitalisation_diagnosis_matches
 )
 import codelists
 
 study_start_date = datetime.date(2020, 11, 1)
-study_end_date = datetime.date(2023, 1, 31)
+study_end_date = datetime.date(2023, 3, 31)
 
 minimum_registration = 90  # ~3 months of previous registration
 covid_to_longcovid_lag = 84  # 12 weeks
@@ -55,7 +56,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         default=registration.end_date,
     )
 
-    # Demographic variables
+    # Demographic variables ------------------------------------------------------------
     dataset.sex = patients.sex
     dataset.age = age_as_of(study_start_date)
     dataset.has_died = has_died(study_start_date)
@@ -63,19 +64,19 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.practice_nuts = registration.practice_nuts1_region_name
     dataset.imd = address_as_of(study_start_date).imd_rounded
 
-    # death
+    # death ------------------------------------------------------------
     dataset.death_date = patients.date_of_death
     ons_deathdata = ons_deaths \
         .sort_by(ons_deaths.date).last_for_patient()
     dataset.ons_death_date = ons_deathdata.date
 
-    # Ethnicity in 6 categories
+    # Ethnicity in 6 categories ------------------------------------------------------------
     dataset.ethnicity = clinical_events.where(clinical_events.ctv3_code.is_in(codelists.ethnicity)) \
         .sort_by(clinical_events.date) \
         .last_for_patient() \
         .ctv3_code.to_category(codelists.ethnicity)
 
-    # covid tests
+    # covid tests ------------------------------------------------------------
     dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
         .where(sgss_covid_all_tests.is_positive) \
         .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
@@ -87,7 +88,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
 
-    # covid hospitalisation
+    # covid hospitalisation ------------------------------------------------------------
     covid_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_covid)
 
     dataset.first_covid_hosp = covid_hospitalisations \
@@ -98,7 +99,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .except_where(covid_hospitalisations.admission_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
 
-    # Any covid identification
+    # Any covid identification ------------------------------------------------------------
     primarycare_covid = clinical_events \
         .where(clinical_events.ctv3_code.is_in(codelists.any_primary_care_code)) \
         .except_where(clinical_events.date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
@@ -110,7 +111,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.total_primarycare_covid = primarycare_covid \
         .count_for_patient()
 
-    # vaccine code - get date of first 5 doses
+    # vaccine code - get date of first 5 doses ------------------------------------------------------------
     create_sequential_variables(
       dataset,
       "covid_vacc_{n}_adm",
@@ -163,14 +164,40 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.vaccine_dose_3_date = vaccine_dose_3.date
     dataset.vaccine_dose_3_manufacturer = vaccine_dose_3.product_name
 
-    # comorbidities
-    comorbidities = clinical_events \
-        .where(clinical_events.date <= dataset.pt_start_date - days(1)) \
-        .where(clinical_events.ctv3_code.is_in(codelists.comorbidities_codelist))
+    # comorbidities ------------------------------------------------------------------
+    diabetes_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.diabetes_codes)
+    haem_cancer_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.haem_cancer_codes)
+    lung_cancer_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.lung_cancer_codes)
+    other_cancer_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.other_cancer_codes)
+    asthma_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.asthma_codes)
+    chronic_cardiac_disease_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.chronic_cardiac_disease_codes)
+    chronic_liver_disease_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.chronic_liver_disease_codes)
+    chronic_respiratory_disease_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.chronic_respiratory_disease_codes)
+    other_neuro_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.other_neuro_codes)
+    stroke_gp_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.stroke_gp_codes)
+    dementia_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.dementia_codes)
+    ra_sle_psoriasis_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.ra_sle_psoriasis_codes)
+    psychosis_schizophrenia_bipolar_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.psychosis_schizophrenia_bipolar_codes)
+    permanent_immune_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.permanent_immune_codes)
+    temp_immune_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.temp_immune_codes)
 
-    dataset.comorbid_count = comorbidities.count_for_patient()
+    dataset.comorbid_count = diabetes_codes + \
+        haem_cancer_codes + \
+        lung_cancer_codes + \
+        other_cancer_codes + \
+        asthma_codes + \
+        chronic_cardiac_disease_codes + \
+        chronic_liver_disease_codes + \
+        chronic_respiratory_disease_codes + \
+        other_neuro_codes + \
+        stroke_gp_codes + \
+        dementia_codes + \
+        ra_sle_psoriasis_codes + \
+        psychosis_schizophrenia_bipolar_codes + \
+        permanent_immune_codes + \
+        temp_immune_codes
 
-    # negative control - hospital fractures
+    # negative control - hospital fractures ------------------------------------------------------------
     fracture_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_fractures)
 
     dataset.first_fracture_hosp = fracture_hospitalisations \
@@ -178,7 +205,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .sort_by(fracture_hospitalisations.admission_date) \
         .first_for_patient().admission_date
 
-    # care home flag
+    # care home flag ------------------------------------------------------------
     dataset.care_home = address_as_of(dataset.pt_start_date) \
         .care_home_is_potential_match.if_null_then(False)
 
@@ -187,11 +214,12 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     dataset.care_home_code = has_prior_event(dataset.pt_start_date, codelists.care_home_flag)
 
-    # shielding data
+    # shielding data ------------------------------------------------------------
     dataset.highrisk_shield = has_prior_event(dataset.pt_start_date, codelists.high_risk_shield)
     dataset.lowrisk_shield = has_prior_event(dataset.pt_start_date, codelists.low_risk_shield)
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
-    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 18)  # will remove missing age
+    # will remove missing age and anyone not male/female
+    population = population & (registrations_number == 1) & (dataset.age <= 100) & (dataset.age >= 18) & (dataset.sex.contains("male"))
 
     dataset.define_population(population)
