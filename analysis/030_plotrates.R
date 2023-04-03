@@ -23,8 +23,8 @@ vaccgroups <- levels(time_data_lc_all$vaccines)
 n_groups <- length(vaccgroups)
 colours <- hcl.colors(n_groups, palette = "viridis")
 colours_dx <- colours #hcl.colors(n_groups, palette = "zissou1")
-fit <- survival::survfit(Surv(t, lc_out) ~ as.factor(vaccines), data=time_data_lc_all)
-fit_dx <- survival::survfit(Surv(t, lc_dx) ~ as.factor(vaccines), data=time_data_lc_dx)
+fit <- survival::survfit(Surv(t, lc_out) ~ vaccines, data=time_data_lc_all)
+fit_dx <- survival::survfit(Surv(t, lc_dx) ~ vaccines, data=time_data_lc_dx)
 
 pdf(here("output/figures/fig1_cumulative_incidence.pdf"), width = 8, height = 6)
 par(mfrow = c(1,2))
@@ -58,12 +58,13 @@ timeseries_plot <- bind_rows(timeseries_lc_all,
 timeseries_lc_all <- NULL
 timeseries_lc_dx <- NULL
 
-timeseries_plot$redacted_out <- redactor2(timeseries_plot$sum_out, threshold = 10)
+timeseries_plot$redacted_out <- timeseries_plot$sum_out # redactor2(timeseries_plot$sum_out, threshold = 10)
 
 pdf(here("output/figures/fig2_raw_counts_line.pdf"), width = 8, height = 6)
 timeseries_plot %>% 
   group_by(date, sex, outcome) %>% 
-  summarise(redacted_out = sum(redacted_out), .groups = "keep") %>% 
+  summarise(sum_out = sum(sum_out), .groups = "keep") %>% 
+  mutate(redacted_out = redactor2(sum_out, threshold = 10)) %>% 
   ggplot(aes(x = date, y = redacted_out)) +
     geom_line(lwd = 0.2, lty = 1, col = "gray20") +
     facet_grid(sex~outcome) +
@@ -74,7 +75,7 @@ dev.off()
 
 pdf(here("output/figures/fig2b_raw_counts_column.pdf"), width = 8, height = 6)
 timeseries_plot %>% 
-  ggplot(aes(x = date, y = redacted_out, fill = vaccines)) +
+  ggplot(aes(x = date, y = sum_out, fill = vaccines)) +
     geom_col(lwd = 0.2, lty = 1, col = "gray20") +
     scale_fill_manual(values = colours) +
     facet_grid(sex~outcome) + 
@@ -84,8 +85,8 @@ timeseries_plot %>%
 dev.off()
 
 # time gaps between vaccine doses  ----------------------------------------
-vaccine_gaps <- time_data_lc_all %>% 
-  mutate(t_gap = tstop-tstart) %>% 
+vaccine_gaps <- time_data_lc_all %>%
+  mutate(t_gap = tstop - tstart) %>%
   filter(sex %in% c("male", "female"), vaccines != "0")
 
 avg_vaccine_gaps <- vaccine_gaps %>% 
