@@ -47,6 +47,7 @@ apply_rates_over_stratifiers <- function(data){
     calculate_rates(data, grouping_var = sex),
     calculate_rates(data, grouping_var = age_cat),
     calculate_rates(data, grouping_var = no_prev_vacc),
+    calculate_rates(data, grouping_var = vaccine_schedule_twodose_detail),
     calculate_rates(data, grouping_var = vaccine_schedule_grouped),
     calculate_rates(data, grouping_var = practice_nuts),
     calculate_rates(data, grouping_var = imd_q5),
