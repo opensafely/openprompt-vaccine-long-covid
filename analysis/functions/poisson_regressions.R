@@ -37,24 +37,50 @@ poisson_regressions <- function(cohort_data, stratifier) {
         tidyr::as_tibble(rownames = "term") %>% 
         janitor::clean_names() %>% 
         mutate(rate = exp(estimate),
-               conf.low = exp(estimate - std_error),
-               conf.high = exp(estimate + std_error)
+               conf.low = exp(estimate - (1.96*std_error)),
+               conf.high = exp(estimate + (1.96*std_error))
         )
     }
     
+    # get level for the intercept term
+    stratifier_intercept <- paste0(stratifier, 
+                                   levels(cohort_data %>% 
+                                     dplyr::select(all_of(stratifier)) %>% 
+                                     pull())[1],
+                                   "(baseline)")
+    intercept_data_to_add <- bind_cols(term = stratifier_intercept, 
+              estimate = NA, 
+              std_error = NA, 
+              z_value = NA, 
+              pr_z = NA, 
+              rate = 1,
+              conf.low = 1, 
+              conf.high = 1)
+  
     poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = cohort_data, family = poisson(link = "log")))
-    crude_output <- convert_to_rates(poissonmodel_crude)
+    crude_output <- convert_to_rates(poissonmodel_crude) %>% 
+      bind_rows(intercept_data_to_add)
     poissonmodel_crude <- NULL
-    
-    poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
-    adjusted_output <- convert_to_rates(poissonmodel_adj)
-    poissonmodel_adj <- NULL
-    
-    bind_rows(
-      mutate(crude_output, model = "crude"),
-      mutate(adjusted_output, model = "adjusted"),
-    ) %>% 
-      mutate(plot_marker = stringr::str_detect(term, stratifier)) %>% 
-      mutate(var = stratifier)
+  
+    if(!stratifier %in% c("age_cat", "sex")){
+      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
+      adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
+        bind_rows(intercept_data_to_add)
+      poissonmodel_adj <- NULL
+      
+      bind_rows(
+        mutate(crude_output, model = "crude"),
+        mutate(adjusted_output, model = "adjusted"),
+      ) %>% 
+        mutate(plot_marker = stringr::str_detect(term, stratifier),
+               var = stratifier,
+               baseline = stratifier_intercept)
+    }else{
+      crude_output %>% 
+        mutate(model = "crude", 
+               plot_marker = stringr::str_detect(term, stratifier),
+               var = stratifier,
+               baseline = stratifier_intercept)
+    }
   }
 }
