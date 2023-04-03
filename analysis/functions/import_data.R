@@ -65,12 +65,19 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
       ethnicity = factor(ethnicity)
     ) %>% 
     # only keep people with recorded sex
-    filter(
-      sex %in% c("male", "female", "intersex")
-    ) %>% 
-    mutate(sex = factor(sex, levels = c("male", "female", "intersex"))) %>% 
+    mutate(sex = factor(sex, levels = c("male", "female"))) %>% 
     # treat region as a factor
-    mutate(practice_nuts = factor(practice_nuts)) %>% 
+    mutate(practice_nuts = factor(practice_nuts,
+                                  levels = c("London", 
+                                             "East Midlands",
+                                             "East of England", 
+                                             "North East", 
+                                             "North West", 
+                                             "South East", 
+                                             "South West", 
+                                             "West Midlands", 
+                                             "Yorkshire and the Humber"
+                                             ))) %>% 
     # treat Long covid diagnosis (Dx) or referral (Rx) as a factor
     mutate(lc_dx_flag = factor(lc_dx_flag, levels = c("Dx", "Rx"))) %>% 
     # convert number of comorbidities to factor (0,1,2+)
@@ -78,7 +85,9 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
       comorbid_count, 
       breaks = c(0,1,2, Inf),
       labels = c("0", "1", "2+"))
-    )
+    ) %>% 
+    # exclude 
+    filter(t > 0) 
   
   df_full %>% 
     dplyr::select(patient_id, pt_start_date, pt_end_date, 
