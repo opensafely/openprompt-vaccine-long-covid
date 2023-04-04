@@ -86,7 +86,7 @@ dev.off()
 
 # time gaps between vaccine doses  ----------------------------------------
 vaccine_gaps <- time_data_lc_all %>%
-  mutate(t_gap = tstop - tstart) %>%
+  mutate(t_gap = t * (365.25/52)) %>%
   filter(sex %in% c("male", "female"), vaccines != "0")
 
 avg_vaccine_gaps <- vaccine_gaps %>% 
@@ -105,7 +105,7 @@ ggplot(drop_na(vaccine_gaps), aes(x = t_gap, colour = sex, fill = sex)) +
   scale_color_manual(values = colours) +
   scale_fill_manual(values = colours) +
   theme_ali() +
-  labs(x = "Avg. difference between doses") +
+  labs(x = "Avg. difference between doses (weeks)") +
   theme(strip.background = element_blank())
 dev.off()
 
