@@ -6,24 +6,35 @@
 
 time_update_vaccinedoses <- function(data, outcome_var){
   # remove anyone who starts and ends on the same date 
+  # need to redefine the participant end date because the outcome date may be different to Any Long COVID date (used in data builder)
+  
+  # Ran into strange error with dates when doing all-in-one (end dates in the year 4,562,122 etc.) 
+  # so split it out into cases and non-cases
   small_base <- data %>% 
     dplyr::select(patient_id, starts_with("pt_"), contains("age"), sex, {{outcome_var}}) %>% 
-    filter(pt_start_date >= as.Date("2020-11-01")) %>% 
-    rename(outcome = {{outcome_var}}) %>%
-    mutate(
-      new_end_date =  lubridate::as_date(
-        ifelse(!is.na(outcome) & outcome < pt_end_date,
-               outcome, pt_end_date),
-        origin = lubridate::origin
-      ),
-      t = pt_start_date %--% new_end_date / dyears(1),
-      outcome_binary = as.numeric(!is.na(outcome))
-    ) %>% 
+    rename(outcome = {{outcome_var}}) %>% 
+    mutate(outcome_binary = as.numeric(!is.na(outcome)))
+  small_base_cases <- small_base %>% 
+    filter(outcome_binary == 1) %>%
+    # create new end date = outcome date (this may be the same as the current end date but it may be earlier or later depending on the outcome, so need to override)
+    mutate(new_end_date =  outcome,
+      t = pt_start_date %--% new_end_date / dyears(1)
+    )  %>% 
+    # again, need to filter out anyone who has the event before/on the same day as study entry
     filter(t>0)
   
+  # get the controls 
+  small_base_controls <- small_base %>% 
+    filter(outcome_binary == 0) %>% 
+    mutate(new_end_date = pt_end_date,
+           t = pt_start_date %--% new_end_date / dyears(1))
+  
+  small_base <- bind_rows(small_base_cases, small_base_controls)
+  
   # calculate time difference for each vaccine dose
-  df_vacc_base_t <- data %>% 
+  df_vacc_base_t <- data %>%
     filter(t>0) %>% 
+    #filter(patient_id %in% small_base$patient_id) %>% 
     select(patient_id, pt_start_date, contains("vaccine_dose_"), contains("vaccine_schedule_")) %>% 
     mutate(vacc_time_1 = pt_start_date %--% vaccine_dose_1_date / dyears(1),
            vacc_time_2 = pt_start_date %--% vaccine_dose_2_date / dyears(1),
@@ -68,7 +79,5 @@ time_update_vaccinedoses <- function(data, outcome_var){
            t_vacc_twodose_grouped = factor(t_vacc_twodose_grouped, 
                                    levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_grouped))),
            t = tstop - tstart
-    ) %>% 
-    # make sure time variable is sensible, if greater than 
-    filter(t < 2.25)
+    )
 }
