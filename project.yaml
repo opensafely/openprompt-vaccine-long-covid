@@ -54,6 +54,17 @@ actions:
       moderately_sensitive: 
         txt3: output/data_properties/timeupdated_dataset_skim.txt
 
+  summarise_timedata: 
+    run: >
+      r:latest
+        analysis/012_timeupdated_summary.R
+    needs: [time_update_data]
+    outputs: 
+      moderately_sensitive: 
+        txt4: output/data_properties/timeupdated_lc_all_tabulate.txt
+        lc_all_t_plot: output/supplementary/time_updated_t_byvaccines.pdf
+        lc_dx_t_plot: output/supplementary/time_updated_t_byvaccines_lc_dx.pdf
+
   crude_rates:
     run: >
       r:latest

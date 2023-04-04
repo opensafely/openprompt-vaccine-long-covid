@@ -17,7 +17,7 @@ time_update_vaccinedoses <- function(data, outcome_var){
   small_base_cases <- small_base %>% 
     filter(outcome_binary == 1) %>%
     # create new end date = outcome date (this may be the same as the current end date but it may be earlier or later depending on the outcome, so need to override)
-    mutate(new_end_date =  outcome,
+    mutate(new_end_date = outcome,
       t = pt_start_date %--% new_end_date / dyears(1)
     )  %>% 
     # again, need to filter out anyone who has the event before/on the same day as study entry
@@ -77,7 +77,7 @@ time_update_vaccinedoses <- function(data, outcome_var){
            t_vacc_twodose_detail = factor(t_vacc_twodose_detail, 
                                    levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_twodose_detail))),
            t_vacc_twodose_grouped = factor(t_vacc_twodose_grouped, 
-                                   levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_grouped))),
+                                   levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_twodose_grouped))),
            t = tstop - tstart
     )
 }
