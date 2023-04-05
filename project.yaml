@@ -73,7 +73,17 @@ actions:
     outputs:
       moderately_sensitive:
         cruderates: output/tab021_crude_lc_rates.csv
-  
+
+  crude_rates_timeupdated:
+    run: >
+      r:latest
+        analysis/021_cruderates_timeupdated.R
+    needs: [time_update_data]
+    outputs:
+      moderately_sensitive:
+        t_cruderates_lc_all: output/tab022_tuv_rates_lc_all.csv
+        t_cruderates_lc_dx: output/tab023_tuv_rates_lc_dx.csv
+
   plot_incidence:
     run: >
       r:latest
