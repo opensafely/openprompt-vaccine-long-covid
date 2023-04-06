@@ -123,5 +123,5 @@ actions:
       moderately_sensitive: 
         poissonplots_all: output/figures/fig3a_rate_ratios.pdf
         poissonplots_lc: output/figures/fig3b_rate_ratios_longcovid.pdf
-        poissonplots_lc_adjusted: output/figures/fig3c_rate_ratios_longcovid_adjustedonly.pdf
+        poissonplots_lc_adjusted: output/figures/fig3c_rate_ratios_adjustedonly.pdf
         poissonplots_control: output/figures/fig3d_rate_ratios_controloutcome.pdf
