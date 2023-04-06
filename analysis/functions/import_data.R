@@ -8,7 +8,9 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
   cases <- readr::read_csv(cases_path) %>% 
     janitor::clean_names()
   spec(cases) %>% print()
-  
+#browser()
+#cases %>% select(patient_id, first_lc, lc_dx_flag, first_lc_dx, longcovid_categorical) %>% View()
+#cases %>% select(patient_id, pt_start_date, pt_end_date,first_lc_dx, first_covid_critical, first_covid_hosp, latest_primarycare_covid, latest_test_before_diagnosis, longcovid_categorical) %>% filter(!is.na(longcovid_categorical)) %>% View()
   controls <- readr::read_csv(controls_path) %>% 
     janitor::clean_names()
   spec(controls) %>% print()
@@ -86,6 +88,15 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
       breaks = c(0,1,2, Inf),
       labels = c("0", "1", "2+"))
     ) %>% 
+    # long covid categorical (depends on previous covid status)
+    mutate(lc_cat = factor(longcovid_categorical, 
+                           levels = c(
+                             "LC only",
+                             "LC post-positive test",
+                             "LC post-primary care COVID",
+                             "LC post-COVID hospitalisation",
+                             "LC post-critical COVID hospitalisation"
+                           ))) %>% 
     # exclude 
     filter(t > 0) 
   
@@ -98,10 +109,11 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
                   highrisk_shield, lowrisk_shield,
                   ons_death_date, death_date,
                   all_test_positive, no_prev_vacc, date_last_vacc, last_vacc_gap,
-                  first_covid_hosp, all_covid_hosp,
+                  first_covid_hosp, first_covid_discharge, all_covid_hosp,
+                  first_covid_critical, first_covid_hosp_primary_dx,
                   latest_primarycare_covid, total_primarycare_covid,
                   starts_with("vaccine_dose_"),
                   first_lc, first_lc_dx, lc_dx_flag, first_fracture_hosp,
-                  t, lc_out, lc_dx_only, fracture
+                  t, lc_out, lc_dx_only, fracture, lc_cat
                   )
 }
