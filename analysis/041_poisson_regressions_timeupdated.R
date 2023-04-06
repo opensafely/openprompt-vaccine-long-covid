@@ -15,19 +15,13 @@ run_the_regressions <- function(data){
 stratifiers_t <-
   c(
     "vaccines",
-    "t_vacc_detail",
-    "t_vacc_grouped",
-    "t_vacc_twodose_detail",
-    "t_vacc_twodose_grouped"
+    "t_vacc_detail"
   )
 
 strat_plot_names_t <-
   c(
     "No. vaccine doses",
-    "Vaccine schedule (detail)",
-    "Vaccine schedule (grouped)",
-    "Vaccine schedule (first 2 doses, detailed)",
-    "Vaccine schedule (first 2 doses, grouped)"
+    "Vaccine schedule (detail)"
   )
 
 # import data ------------------------------------------------------------
