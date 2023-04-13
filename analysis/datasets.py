@@ -175,12 +175,19 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     prior_events = clinical_events.where(clinical_events.date.is_on_or_before(baseline_date))
 
-    def has_prior_event(codelist, where=True):
+    def has_prior_event_ctv3(codelist, where=True):
         return (
             prior_events.where(where)
             .where(prior_events.ctv3_code.is_in(codelist))
             .sort_by(prior_events.date)
             .last_for_patient().date
+        )
+
+    def has_prior_event_snomed(codelist, where=True):
+        return (
+            prior_events.where(where)
+            .where(prior_events.snomedct_code.is_in(codelist))
+            .exists_for_patient()
         )
 
     def has_prior_event_numeric(codelist, where=True):
@@ -193,39 +200,39 @@ def add_common_variables(dataset, study_start_date, end_date, population):
                 when(~prior_events_exists).then(0)
                 )
         )
-    diabetes_codes = has_prior_event_numeric(codelists.diabetes_codes)
-    haem_cancer_codes = has_prior_event_numeric(codelists.haem_cancer_codes)
-    lung_cancer_codes = has_prior_event_numeric(codelists.lung_cancer_codes)
-    other_cancer_codes = has_prior_event_numeric(codelists.other_cancer_codes)
-    asthma_codes = has_prior_event_numeric(codelists.asthma_codes)
-    chronic_cardiac_disease_codes = has_prior_event_numeric(codelists.chronic_cardiac_disease_codes)
-    chronic_liver_disease_codes = has_prior_event_numeric(codelists.chronic_liver_disease_codes)
-    chronic_respiratory_disease_codes = has_prior_event_numeric(codelists.chronic_respiratory_disease_codes)
-    other_neuro_codes = has_prior_event_numeric(codelists.other_neuro_codes)
-    stroke_gp_codes = has_prior_event_numeric(codelists.stroke_gp_codes)
-    dementia_codes = has_prior_event_numeric(codelists.dementia_codes)
-    ra_sle_psoriasis_codes = has_prior_event_numeric(codelists.ra_sle_psoriasis_codes)
-    psychosis_schizophrenia_bipolar_codes = has_prior_event_numeric(codelists.psychosis_schizophrenia_bipolar_codes)
-    permanent_immune_codes = has_prior_event_numeric(codelists.permanent_immune_codes)
-    temp_immune_codes = has_prior_event_numeric(codelists.temp_immune_codes)
+    dataset.diabetes_codes = has_prior_event_numeric(codelists.diabetes_codes)
+    dataset.haem_cancer_codes = has_prior_event_numeric(codelists.haem_cancer_codes)
+    dataset.lung_cancer_codes = has_prior_event_numeric(codelists.lung_cancer_codes)
+    dataset.other_cancer_codes = has_prior_event_numeric(codelists.other_cancer_codes)
+    dataset.asthma_codes = has_prior_event_numeric(codelists.asthma_codes)
+    dataset.chronic_cardiac_disease_codes = has_prior_event_numeric(codelists.chronic_cardiac_disease_codes)
+    dataset.chronic_liver_disease_codes = has_prior_event_numeric(codelists.chronic_liver_disease_codes)
+    dataset.chronic_respiratory_disease_codes = has_prior_event_numeric(codelists.chronic_respiratory_disease_codes)
+    dataset.other_neuro_codes = has_prior_event_numeric(codelists.other_neuro_codes)
+    dataset.stroke_gp_codes = has_prior_event_numeric(codelists.stroke_gp_codes)
+    dataset.dementia_codes = has_prior_event_numeric(codelists.dementia_codes)
+    dataset.ra_sle_psoriasis_codes = has_prior_event_numeric(codelists.ra_sle_psoriasis_codes)
+    dataset.psychosis_schizophrenia_bipolar_codes = has_prior_event_numeric(codelists.psychosis_schizophrenia_bipolar_codes)
+    dataset.permanent_immune_codes = has_prior_event_numeric(codelists.permanent_immune_codes)
+    dataset.temp_immune_codes = has_prior_event_numeric(codelists.temp_immune_codes)
 
-    dataset.comorbid_count = diabetes_codes + \
-        haem_cancer_codes + \
-        lung_cancer_codes + \
-        other_cancer_codes + \
-        asthma_codes + \
-        chronic_cardiac_disease_codes + \
-        chronic_liver_disease_codes + \
-        chronic_respiratory_disease_codes + \
-        other_neuro_codes + \
-        stroke_gp_codes + \
-        dementia_codes + \
-        ra_sle_psoriasis_codes + \
-        psychosis_schizophrenia_bipolar_codes + \
-        permanent_immune_codes + \
-        temp_immune_codes
+    dataset.comorbid_count = dataset.diabetes_codes + \
+        dataset.haem_cancer_codes + \
+        dataset.lung_cancer_codes + \
+        dataset.other_cancer_codes + \
+        dataset.asthma_codes + \
+        dataset.chronic_cardiac_disease_codes + \
+        dataset.chronic_liver_disease_codes + \
+        dataset.chronic_respiratory_disease_codes + \
+        dataset.other_neuro_codes + \
+        dataset.stroke_gp_codes + \
+        dataset.dementia_codes + \
+        dataset.ra_sle_psoriasis_codes + \
+        dataset.psychosis_schizophrenia_bipolar_codes + \
+        dataset.permanent_immune_codes + \
+        dataset.temp_immune_codes
 
-    # negative control - hospital fractures ------------------------------------------------------------
+    # negative control outcome - hospital fractures -------------------------------
     fracture_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_fractures)
 
     dataset.first_fracture_hosp = fracture_hospitalisations \
@@ -240,11 +247,11 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.care_home_nursing = address_as_of(dataset.pt_start_date) \
         .care_home_requires_nursing.if_null_then(False)
 
-    dataset.care_home_code = has_prior_event(dataset.pt_start_date, codelists.care_home_flag)
+    dataset.care_home_code = has_prior_event_snomed(codelists.care_home_flag)
 
     # shielding data ------------------------------------------------------------
-    dataset.highrisk_shield = has_prior_event(dataset.pt_start_date, codelists.high_risk_shield)
-    dataset.lowrisk_shield = has_prior_event(dataset.pt_start_date, codelists.low_risk_shield)
+    dataset.highrisk_shield = has_prior_event_snomed(codelists.high_risk_shield)
+    dataset.lowrisk_shield = has_prior_event_snomed(codelists.low_risk_shield)
 
     # EXCLUSION criteria - gather these all here to remain consistent with the protocol
     # will remove missing age and anyone not male/female
