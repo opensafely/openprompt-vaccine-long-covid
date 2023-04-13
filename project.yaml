@@ -38,8 +38,10 @@ actions:
       highly_sensitive:
         cleandata: output/clean_dataset.gz.parquet 
       moderately_sensitive: 
-        txt1: output/data_properties/clean_dataset_skim.txt
-        txt2: output/data_properties/clean_dataset_tabulate.txt
+        txt1: output/data_properties/raw_dataset_skim.txt
+        txt2: output/data_properties/raw_dataset_tabulate.txt
+        txt3: output/data_properties/clean_dataset_skim.txt
+        txt4: output/data_properties/clean_dataset_tabulate.txt
 
   time_update_data: 
     run: >

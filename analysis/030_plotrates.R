@@ -68,7 +68,7 @@ timeseries_plot %>%
   ggplot(aes(x = date, y = redacted_out)) +
     geom_line(lwd = 0.2, lty = 1, col = "gray20") +
     facet_grid(sex~outcome) +
-    labs(x = "Date", y = "Count of Long COVID codes", caption = "Intersex individuals omitted due to small numbers") +
+    labs(x = "Date", y = "Count of Long COVID codes") +
     theme_ali() + 
     theme(strip.background = element_blank())
 dev.off()
@@ -79,7 +79,7 @@ timeseries_plot %>%
     geom_col(lwd = 0.2, lty = 1, col = "gray20") +
     scale_fill_manual(values = colours) +
     facet_grid(sex~outcome) + 
-    labs(x = "Date", y = "Count of Long COVID codes", caption = "Intersex individuals omitted due to small numbers") +
+    labs(x = "Date", y = "Count of Long COVID codes") +
     theme_ali() + 
     theme(strip.background = element_blank())
 dev.off()
