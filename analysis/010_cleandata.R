@@ -23,16 +23,21 @@ longcovid_combined_codelist <- bind_rows(
 imported_data <-
   import_raw_data(cases_path = cases_data_path, controls_path = controls_data_path)
 
-cleaned_data <- clean_raw_data(imported_data)
 
 # need these manual overrides with the dummy data
-data_size <- dim(imported_data)[1]
-source("analysis/debugging_codes/make_fake_vaccine_codes.R")
-imported_data$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date)] <- test_mrna_code$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date)]
-imported_data$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date)] <- test_mrna_code$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date)]
-imported_data$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date)] <- test_mrna_code$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date)]
+#data_size <- dim(imported_data)[1]
+#source("analysis/debugging_codes/make_fake_vaccine_codes.R")
+#imported_data$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date)] <- test_mrna_code$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date)]
+#imported_data$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date)] <- test_mrna_code$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date)]
+#imported_data$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date)] <- test_mrna_code$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date)]
 
-cleaned_data <- tidy_vaccine_data(imported_data)
+
+# cleaning the data -------------------------------------------------------
+# Step 1 - clean and format the raw data
+cleaned_data <- clean_raw_data(imported_data)
+
+# Step 2 - tidy the vaccination data
+cleaned_data <- tidy_vaccine_data(cleaned_data)
 arrow::write_parquet(cleaned_data, 
                      sink = here::here("output/clean_dataset.gz.parquet"),
                      compression = "gzip", compression_level = 5)
