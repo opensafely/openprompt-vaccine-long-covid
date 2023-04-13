@@ -97,6 +97,20 @@ def hospitalisation_diagnosis_matches(admissions, codelist):
   return admissions.where(any_of(conditions))
 
 
+def hospitalisation_primary_diagnosis_matches(admissions, codelist):
+  code_strings = set()
+  for code in codelist:
+    # Pass the string through the ICD10Code to constructor to validate that it has
+    # the expected format
+    code_string = ICD10Code(code)._to_primitive_type()
+    code_strings.add(code_string)
+  conditions = [
+    admissions.primary_diagnoses.contains(code_string)
+    for code_string in code_strings
+  ]
+  return admissions.where(any_of(conditions))
+
+
 def create_sequential_variables(
     dataset, variable_name_template, events, column, num_variables, sort_column=None
 ):

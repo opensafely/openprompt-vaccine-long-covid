@@ -55,11 +55,11 @@ adjusted_rates_out %>%
         strip.background = element_blank())
 dev.off()
 
-pdf(here("output/figures/fig3c_rate_ratios_longcovid_adjustedonly.pdf"), width = 12, height = 14)
+pdf(here("output/figures/fig3c_rate_ratios_adjustedonly.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
 adjusted_rates_out %>% 
   filter(plot_marker) %>% 
-  filter(outcome != "Fractures", model == "adjusted") %>% 
+  filter(model == "adjusted") %>% 
   ggplot(aes(x=term2, y = rate, ymin = conf.low, ymax = conf.high, colour = outcome, lty = model)) +
   geom_point(size = 1.5, pch = 16, position = pd) +
   geom_linerange(lwd = 0.75, position = pd) +

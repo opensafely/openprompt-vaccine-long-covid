@@ -88,14 +88,20 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     # covid hospitalisation ------------------------------------------------------------
     covid_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_covid)
+    all_covid_hosp = covid_hospitalisations \
+        .except_where(covid_hospitalisations.admission_date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
 
-    dataset.first_covid_hosp = covid_hospitalisations \
-        .sort_by(covid_hospitalisations.admission_date) \
-        .first_for_patient().admission_date
-
-    dataset.all_covid_hosp = covid_hospitalisations \
-        .except_where(covid_hospitalisations.admission_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
+    dataset.all_covid_hosp = all_covid_hosp \
         .count_for_patient()
+
+    first_covid_hosp = all_covid_hosp \
+        .sort_by(all_covid_hosp.admission_date) \
+        .first_for_patient()
+
+    dataset.first_covid_hosp = first_covid_hosp.admission_date
+    dataset.first_covid_discharge = first_covid_hosp.discharge_date
+    dataset.first_covid_critical = first_covid_hosp.days_in_critical_care > 0
+    dataset.first_covid_hosp_primary_dx = first_covid_hosp.primary_diagnoses.is_in(codelists.hosp_covid)
 
     # Any covid identification ------------------------------------------------------------
     primarycare_covid = clinical_events \
@@ -103,7 +109,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .except_where(clinical_events.date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
 
     dataset.latest_primarycare_covid = primarycare_covid \
-        .sort_by(clinical_events.date) \
+        .sort_by(primarycare_covid.date) \
         .last_for_patient().date
 
     dataset.total_primarycare_covid = primarycare_covid \

@@ -48,21 +48,14 @@ time_update_vaccinedoses <- function(data, outcome_var){
   vaccines_schedule_timeupdate <- df_vacc_base_t %>% 
     filter(!is.na(years)) 
   vaccines_schedule_timeupdate$vaccine_schedule_detail[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
-  vaccines_schedule_timeupdate$vaccine_schedule_grouped[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
-  vaccines_schedule_timeupdate$vaccine_schedule_twodose_detail[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
-  vaccines_schedule_timeupdate$vaccine_schedule_twodose_grouped[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
-  
+  # 2nd dose if a three doser
   vaccines_schedule_timeupdate$vaccine_schedule_detail[vaccines_schedule_timeupdate$vacc_no == "2"] <- as.character(vaccines_schedule_timeupdate$vaccine_schedule_twodose_detail[vaccines_schedule_timeupdate$vacc_no == "2"])
-  vaccines_schedule_timeupdate$vaccine_schedule_grouped[vaccines_schedule_timeupdate$vacc_no == "2"] <- as.character(vaccines_schedule_timeupdate$vaccine_schedule_twodose_grouped[vaccines_schedule_timeupdate$vacc_no == "2"])
   
   # create the survival dataset 
   survivaldata <- survival::tmerge(small_base, small_base, id = patient_id, out = event(t, outcome_binary)) 
   newsurvival <- survival::tmerge(survivaldata, df_vacc_base_t, id = patient_id, vaccines = tdc(years, vacc_no, 0)) 
   
   newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_detail = tdc(years, vaccine_schedule_detail, "No vaccine")) 
-  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_grouped = tdc(years, vaccine_schedule_grouped, "No vaccine")) 
-  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_twodose_detail = tdc(years, vaccine_schedule_twodose_detail, "No vaccine")) 
-  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_twodose_grouped = tdc(years, vaccine_schedule_twodose_grouped, "No vaccine")) 
   
   newsurvival %>% 
     select(-outcome_binary, -pt_end_date) %>% 
@@ -71,13 +64,7 @@ time_update_vaccinedoses <- function(data, outcome_var){
                              levels = 0:3, 
                              labels = c("0","1","2","3+"))) %>% 
     mutate(t_vacc_detail = factor(t_vacc_detail, 
-                               levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_detail))),
-           t_vacc_grouped = factor(t_vacc_grouped, 
-                                  levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_grouped))),
-           t_vacc_twodose_detail = factor(t_vacc_twodose_detail, 
-                                   levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_twodose_detail))),
-           t_vacc_twodose_grouped = factor(t_vacc_twodose_grouped, 
-                                   levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_twodose_grouped))),
-           t = tstop - tstart
-    )
+                               levels = c("No vaccine", levels(vaccines_schedule_timeupdate$vaccine_schedule_detail)))
+    ) %>% 
+    mutate(t = tstop - tstart)
 }
