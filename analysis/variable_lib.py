@@ -7,28 +7,6 @@ from databuilder.tables.beta import tpp as schema
 
 import codelists
 
-def has_prior_event(date, codelist, events=schema.clinical_events, where=True):
-  prior_events = events.where(events.date.is_on_or_before(date))
-  return (
-      prior_events.where(where)
-      .where(prior_events.snomedct_code.is_in(codelist))
-      .exists_for_patient()
-  )
-
-# returns a 1 if an event exists, 0 if not
-# uses ctv3 codes instead of snomed as in `has_prior_event`
-# used for counting the number of comorbidities in the data in `datasets.py`
-def has_prior_event_ctv3_numeric(date, codelist, events=schema.clinical_events, where=True):
-    prior_events = events.where(events.date.is_on_or_before(date))
-    prior_events_exists = prior_events.where(where).where(prior_events.ctv3_code.is_in(codelist)).exists_for_patient()
-    return (
-      case(
-          when(prior_events_exists).then(1),
-          when(~prior_events_exists).then(0)
-        )
-    )
-
-
 def any_of(conditions):
   return reduce(operator.or_, conditions)
 

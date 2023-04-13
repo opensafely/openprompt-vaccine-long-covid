@@ -15,9 +15,7 @@ import datetime
 from variable_lib import (
   age_as_of,
   has_died,
-  has_prior_event,
   address_as_of,
-  has_prior_event_ctv3_numeric,
   create_sequential_variables,
   hospitalisation_diagnosis_matches
 )
@@ -165,21 +163,45 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.vaccine_dose_3_manufacturer = vaccine_dose_3.product_name
 
     # comorbidities ------------------------------------------------------------------
-    diabetes_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.diabetes_codes)
-    haem_cancer_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.haem_cancer_codes)
-    lung_cancer_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.lung_cancer_codes)
-    other_cancer_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.other_cancer_codes)
-    asthma_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.asthma_codes)
-    chronic_cardiac_disease_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.chronic_cardiac_disease_codes)
-    chronic_liver_disease_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.chronic_liver_disease_codes)
-    chronic_respiratory_disease_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.chronic_respiratory_disease_codes)
-    other_neuro_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.other_neuro_codes)
-    stroke_gp_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.stroke_gp_codes)
-    dementia_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.dementia_codes)
-    ra_sle_psoriasis_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.ra_sle_psoriasis_codes)
-    psychosis_schizophrenia_bipolar_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.psychosis_schizophrenia_bipolar_codes)
-    permanent_immune_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.permanent_immune_codes)
-    temp_immune_codes = has_prior_event_ctv3_numeric(dataset.pt_start_date, codelists.temp_immune_codes)
+    # We define baseline variables on the day _before_ the study date (start date = day of
+    # first possible booster vaccination)
+    baseline_date = dataset.pt_start_date - days(1)
+
+    prior_events = clinical_events.where(clinical_events.date.is_on_or_before(baseline_date))
+
+    def has_prior_event(codelist, where=True):
+        return (
+            prior_events.where(where)
+            .where(prior_events.ctv3_code.is_in(codelist))
+            .sort_by(prior_events.date)
+            .last_for_patient().date
+        )
+
+    def has_prior_event_numeric(codelist, where=True):
+        prior_events_exists = prior_events.where(where) \
+            .where(prior_events.ctv3_code.is_in(codelist)) \
+            .exists_for_patient()
+        return (
+            case(
+                when(prior_events_exists).then(1),
+                when(~prior_events_exists).then(0)
+                )
+        )
+    diabetes_codes = has_prior_event_numeric(codelists.diabetes_codes)
+    haem_cancer_codes = has_prior_event_numeric(codelists.haem_cancer_codes)
+    lung_cancer_codes = has_prior_event_numeric(codelists.lung_cancer_codes)
+    other_cancer_codes = has_prior_event_numeric(codelists.other_cancer_codes)
+    asthma_codes = has_prior_event_numeric(codelists.asthma_codes)
+    chronic_cardiac_disease_codes = has_prior_event_numeric(codelists.chronic_cardiac_disease_codes)
+    chronic_liver_disease_codes = has_prior_event_numeric(codelists.chronic_liver_disease_codes)
+    chronic_respiratory_disease_codes = has_prior_event_numeric(codelists.chronic_respiratory_disease_codes)
+    other_neuro_codes = has_prior_event_numeric(codelists.other_neuro_codes)
+    stroke_gp_codes = has_prior_event_numeric(codelists.stroke_gp_codes)
+    dementia_codes = has_prior_event_numeric(codelists.dementia_codes)
+    ra_sle_psoriasis_codes = has_prior_event_numeric(codelists.ra_sle_psoriasis_codes)
+    psychosis_schizophrenia_bipolar_codes = has_prior_event_numeric(codelists.psychosis_schizophrenia_bipolar_codes)
+    permanent_immune_codes = has_prior_event_numeric(codelists.permanent_immune_codes)
+    temp_immune_codes = has_prior_event_numeric(codelists.temp_immune_codes)
 
     dataset.comorbid_count = diabetes_codes + \
         haem_cancer_codes + \
