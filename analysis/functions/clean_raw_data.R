@@ -1,22 +1,10 @@
-#' Import cases and controls for primary cohort construction
-#' @description Imports the cases and controls data from Data builder, combines and tidies a couple of variables
-#' @param cases_path File path for the file containing case data
-#' @param controls_path File path for the file containing controls data
-#' @return A dataframe containing data on both cases and controls
+#' Clean raw data - calculate time in study, create binary outcome variables, convert strings to factors 
+#' @description Imports the raw data and cleans it
+#' @param data_in Combined case and control data (created by import_raw_data)
+#' @return A dataframe containing cleaned data and string variables converted to factors
 
-import_and_combine <- function(cases_path = "str", controls_path = "str"){
-  cases <- readr::read_csv(cases_path) %>% 
-    janitor::clean_names()
-  spec(cases) %>% print()
-#browser()
-#cases %>% select(patient_id, first_lc, lc_dx_flag, first_lc_dx, longcovid_categorical) %>% View()
-#cases %>% select(patient_id, pt_start_date, pt_end_date,first_lc_dx, first_covid_critical, first_covid_hosp, latest_primarycare_covid, latest_test_before_diagnosis, longcovid_categorical) %>% filter(!is.na(longcovid_categorical)) %>% View()
-  controls <- readr::read_csv(controls_path) %>% 
-    janitor::clean_names()
-  spec(controls) %>% print()
-  
-  df_full <- bind_rows(cases, 
-                       controls) %>% 
+clean_raw_data <- function(data_in){
+  df_full <- data_in %>% 
     arrange(patient_id) %>% 
     mutate(
       # create time variable for follow up (years)
@@ -72,21 +60,21 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
     mutate(practice_nuts = factor(practice_nuts,
                                   levels = c("London", 
                                              "East Midlands",
-                                             "East of England", 
-                                             "North East", 
-                                             "North West", 
-                                             "South East", 
-                                             "South West", 
+                                             "East of England",
+                                             "North East",
+                                             "North West",
+                                             "South East",
+                                             "South West",
                                              "West Midlands", 
                                              "Yorkshire and the Humber"
-                                             ))) %>% 
+                                  ))) %>% 
     # treat Long covid diagnosis (Dx) or referral (Rx) as a factor
     mutate(lc_dx_flag = factor(lc_dx_flag, levels = c("Dx", "Rx"))) %>% 
     # convert number of comorbidities to factor (0,1,2+)
     mutate(comorbidities = cut(
       comorbid_count, 
-      breaks = c(0,1,2, Inf),
-      labels = c("0", "1", "2+"))
+      breaks = c(-Inf, 0, 1, 2, Inf),
+      labels = c("0", "1", "2+", "2+"))
     ) %>% 
     # long covid categorical (depends on previous covid status)
     mutate(lc_cat = factor(longcovid_categorical, 
@@ -115,5 +103,7 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
                   starts_with("vaccine_dose_"),
                   first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,
                   t, lc_out, lc_dx_only, fracture
-                  )
+    )
 }
+
+
