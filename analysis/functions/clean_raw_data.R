@@ -66,7 +66,7 @@ clean_raw_data <- function(data_in){
                                              "South East",
                                              "South West",
                                              "West Midlands", 
-                                             "Yorkshire and the Humber"
+                                             "Yorkshire and The Humber"
                                   ))) %>% 
     # treat Long covid diagnosis (Dx) or referral (Rx) as a factor
     mutate(lc_dx_flag = factor(lc_dx_flag, levels = c("Dx", "Rx"))) %>% 
