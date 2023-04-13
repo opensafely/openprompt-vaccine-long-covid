@@ -19,3 +19,18 @@ print(table(time_data_lc_dx$vaccines, time_data_lc_dx$lc_dx))
 
 # summarise data ----------------------------------------------------------
 summarise_data(data_in = time_data_lc_all, filenamebase = "timeupdated_lc_all")
+
+# describe time updated data - lc dx only outcome  ------------------------
+pdf(here("output/supplementary/time_updated_t_byvaccines.pdf"), width = 8, height = 6)
+ggplot(time_data_lc_all, aes(x = t, group = vaccines, colour = vaccines)) +
+  geom_density() + 
+  facet_wrap(~lc_out) + 
+  theme_ali()
+dev.off()
+
+pdf(here("output/supplementary/time_updated_t_byvaccines_lc_dx.pdf"), width = 8, height = 6)
+ggplot(time_data_lc_dx, aes(x = t, group = vaccines, colour = vaccines)) +
+  geom_density() + 
+  facet_wrap(~lc_dx) + 
+  theme_ali()
+dev.off()
