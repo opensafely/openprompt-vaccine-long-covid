@@ -21,7 +21,11 @@ imported_data <-
 #imported_data$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date)] <- test_mrna_code$vaccine_dose_1_manufacturer[!is.na(imported_data$vaccine_dose_1_date)]
 #imported_data$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date)] <- test_mrna_code$vaccine_dose_2_manufacturer[!is.na(imported_data$vaccine_dose_2_date)]
 #imported_data$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date)] <- test_mrna_code$vaccine_dose_3_manufacturer[!is.na(imported_data$vaccine_dose_3_date)]
-
+combined_codelist <- bind_rows(
+  readr::read_csv(here("codelists/opensafely-nice-managing-the-long-term-effects-of-covid-19.csv")),
+  readr::read_csv(here("codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv")),
+  readr::read_csv(here("codelists/opensafely-referral-and-signposting-for-long-covid.csv"))
+)
 cleaned_data <- tidy_vaccine_data(imported_data)
 arrow::write_parquet(cleaned_data, 
                      sink = here::here("output/clean_dataset.gz.parquet"),

@@ -36,6 +36,7 @@ add_common_variables(dataset, study_start_date, first_lc_code.best_date, populat
 
 # add specfic variables
 dataset.first_lc = first_lc_code.best_date
+dataset.first_lc_code = first_lc_code.best_code
 dataset.test_to_lc_gap = (first_lc_code.best_date - dataset.latest_test_before_diagnosis).days
 dataset.vacc_to_lc_gap = (first_lc_code.best_date - dataset.date_last_vacc).days
 

@@ -93,7 +93,7 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
     dplyr::select(patient_id, pt_start_date, pt_end_date, 
                   sex, age, age_centred, age_cat, 
                   practice_nuts, ethnicity, 
-                  imd_q5, comorbidities,
+                  imd_q5, comorbidities, comorbid_count,
                   care_home, care_home_nursing, care_home_code,
                   highrisk_shield, lowrisk_shield,
                   ons_death_date, death_date,
@@ -101,7 +101,7 @@ import_and_combine <- function(cases_path = "str", controls_path = "str"){
                   first_covid_hosp, all_covid_hosp,
                   latest_primarycare_covid, total_primarycare_covid,
                   starts_with("vaccine_dose_"),
-                  first_lc, first_lc_dx, lc_dx_flag, first_fracture_hosp,
+                  first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,
                   t, lc_out, lc_dx_only, fracture
                   )
 }
