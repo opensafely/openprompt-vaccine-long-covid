@@ -60,7 +60,7 @@ clean_raw_data <- function(data_in){
     mutate(practice_nuts = factor(practice_nuts,
                                   levels = c("London", 
                                              "East Midlands",
-                                             "East of England",
+                                             "East",
                                              "North East",
                                              "North West",
                                              "South East",
@@ -102,7 +102,7 @@ clean_raw_data <- function(data_in){
                   latest_primarycare_covid, total_primarycare_covid,
                   starts_with("vaccine_dose_"),
                   first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,
-                  t, lc_out, lc_dx_only, fracture
+                  t, lc_out, lc_dx_only, lc_cat, fracture
     )
 }
 
