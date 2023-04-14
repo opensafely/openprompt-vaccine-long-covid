@@ -43,6 +43,21 @@ actions:
         txt3: output/data_properties/clean_dataset_skim.txt
         txt4: output/data_properties/clean_dataset_tabulate.txt
 
+  summarise_cohort_at_baseline: 
+    run: >
+      r:latest
+        analysis/013_create_table1.R
+    needs: [clean_the_data]
+    outputs: 
+      moderately_sensitive: 
+        table1: output/tables/tab1_baseline_description.html
+        table1_csv: output/table1_data.csv
+        table1: output/tables/tab2_full_description.html
+        table1_csv: output/table2_data.csv
+        start_end_hist: output/supplementary/histogram_start_end_dates.pdf
+        vaccine_lc_gap: output/supplementary/fig_vaccines_longcovid_gap.pdf
+        vaccine_lc_gap_csv: output/supplementary/vaccines_longcovid_gap.csv
+  
   time_update_data: 
     run: >
       r:latest

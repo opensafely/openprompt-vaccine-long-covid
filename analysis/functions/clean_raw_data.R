@@ -76,6 +76,24 @@ clean_raw_data <- function(data_in){
       breaks = c(-Inf, 0, 1, 2, Inf),
       labels = c("0", "1", "2+", "2+"))
     ) %>% 
+    # create number of hospitalisations as factor (0-5+)
+    mutate(covid_hosp_cat = cut(
+      all_covid_hosp, 
+      breaks = c(-Inf, 0:3, Inf),
+      labels = c(as.character(0:2), "3+", "3+"))
+    ) %>% 
+    # create number of covid records as factor (0-5+)
+    mutate(covid_primary_cat = cut(
+      total_primarycare_covid, 
+      breaks = c(-Inf, 0:5, Inf),
+      labels = c(as.character(0:4), "5+", "5+"))
+    ) %>% 
+    # create number of covid Tests as factor (0-20+)
+    mutate(test_positive_cat = cut(
+      all_test_positive, 
+      breaks = c(-Inf, 0:5, Inf),
+      labels = c(as.character(0:4), "5+", "5+"))
+    ) %>% 
     # long covid categorical (depends on previous covid status)
     mutate(lc_cat = factor(longcovid_categorical, 
                            levels = c(
@@ -96,11 +114,13 @@ clean_raw_data <- function(data_in){
                   care_home, care_home_nursing, care_home_code,
                   highrisk_shield, lowrisk_shield,
                   ons_death_date, death_date,
-                  all_test_positive, no_prev_vacc, date_last_vacc, last_vacc_gap,
+                  all_test_positive, 
                   first_covid_hosp, first_covid_discharge, all_covid_hosp,
                   first_covid_critical, first_covid_hosp_primary_dx,
                   latest_primarycare_covid, total_primarycare_covid,
+                  covid_hosp_cat, covid_primary_cat, test_positive_cat,
                   starts_with("vaccine_dose_"),
+                  no_prev_vacc, date_last_vacc, last_vacc_gap,
                   first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,
                   t, lc_out, lc_dx_only, lc_cat, fracture
     )
