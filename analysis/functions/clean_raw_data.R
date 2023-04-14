@@ -88,9 +88,15 @@ clean_raw_data <- function(data_in){
       breaks = c(-Inf, 0:5, Inf),
       labels = c(as.character(0:4), "5+", "5+"))
     ) %>% 
-    # create number of covid Tests as factor (0-20+)
+    # create number of covid positive Tests as factor (0-20+)
     mutate(test_positive_cat = cut(
       all_test_positive, 
+      breaks = c(-Inf, 0:5, Inf),
+      labels = c(as.character(0:4), "5+", "5+"))
+    ) %>% 
+    # create number of covid Tests as factor (0-20+)
+    mutate(test_total_cat = cut(
+      all_tests, 
       breaks = c(-Inf, 0:5, Inf),
       labels = c(as.character(0:4), "5+", "5+"))
     ) %>% 
@@ -114,11 +120,11 @@ clean_raw_data <- function(data_in){
                   care_home, care_home_nursing, care_home_code,
                   highrisk_shield, lowrisk_shield,
                   ons_death_date, death_date,
-                  all_test_positive, 
+                  all_test_positive, all_tests,
                   first_covid_hosp, first_covid_discharge, all_covid_hosp,
                   first_covid_critical, first_covid_hosp_primary_dx,
                   latest_primarycare_covid, total_primarycare_covid,
-                  covid_hosp_cat, covid_primary_cat, test_positive_cat,
+                  covid_hosp_cat, covid_primary_cat, test_positive_cat, test_total_cat,
                   starts_with("vaccine_dose_"),
                   no_prev_vacc, date_last_vacc, last_vacc_gap,
                   first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,

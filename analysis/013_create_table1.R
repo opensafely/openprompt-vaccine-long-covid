@@ -72,11 +72,12 @@ var_labels_full <- splice(
   var_labels,
   lc_out ~ "Any Long COVID record", 
   lc_dx_only ~ "Long COVID diagnosis",
-  #lc_cat ~ "Long COVID record by prior status",
+  lc_cat ~ "Long COVID record by prior status",
   fracture ~ "Hospital record of fracture", 
   covid_hosp_cat ~ "COVID-19 hospitalisations (n)",
   covid_primary_cat ~ "COVID-19 primary care record (n)", 
   test_positive_cat ~ "COVID-19 positive tests (n)",
+  test_total_cat ~ "COVID-19 tests (n)",
   vaccine_schedule_detail ~ "Vaccination schedule received"
 )
 
@@ -153,12 +154,13 @@ fup_table <- cleaned_data %>%
                 t,
                 lc_out,
                 lc_dx_only,
-                #lc_cat,
+                lc_cat,
                 fracture,
                 vaccine_schedule_detail,
                 covid_hosp_cat, 
                 covid_primary_cat, 
                 test_positive_cat,
+                test_total_cat,
                 sex,
                 age,
                 age_cat,
