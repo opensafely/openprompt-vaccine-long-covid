@@ -52,8 +52,8 @@ actions:
       moderately_sensitive: 
         table1: output/tables/tab1_baseline_description.html
         table1_csv: output/table1_data.csv
-        table1: output/tables/tab2_full_description.html
-        table1_csv: output/table2_data.csv
+        table2: output/tables/tab2_full_description.html
+        table2_csv: output/table2_data.csv
         start_end_hist: output/supplementary/histogram_start_end_dates.pdf
         vaccine_lc_gap: output/supplementary/fig_vaccines_longcovid_gap.pdf
         vaccine_lc_gap_csv: output/supplementary/vaccines_longcovid_gap.csv
