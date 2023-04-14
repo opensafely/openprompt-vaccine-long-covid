@@ -22,7 +22,7 @@ from variable_lib import (
 import codelists
 
 study_start_date = datetime.date(2020, 11, 1)
-study_end_date = datetime.date(2023, 3, 31)
+study_end_date = datetime.date(2023, 1, 31)
 
 minimum_registration = 90  # ~3 months of previous registration
 covid_to_longcovid_lag = 84  # 12 weeks
@@ -81,6 +81,11 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     dataset.all_test_positive = sgss_covid_all_tests \
         .where(sgss_covid_all_tests.is_positive) \
+        .except_where(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
+        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
+        .count_for_patient()
+
+    dataset.all_tests = sgss_covid_all_tests \
         .except_where(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
         .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
         .count_for_patient()
