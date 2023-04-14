@@ -72,7 +72,7 @@ var_labels_full <- splice(
   var_labels,
   lc_out ~ "Any Long COVID record", 
   lc_dx_only ~ "Long COVID diagnosis",
-  lc_cat ~ "Long COVID record by prior status",
+  #lc_cat ~ "Long COVID record by prior status",
   fracture ~ "Hospital record of fracture", 
   covid_hosp_cat ~ "COVID-19 hospitalisations (n)",
   covid_primary_cat ~ "COVID-19 primary care record (n)", 
@@ -153,7 +153,7 @@ fup_table <- cleaned_data %>%
                 t,
                 lc_out,
                 lc_dx_only,
-                lc_cat,
+                #lc_cat,
                 fracture,
                 vaccine_schedule_detail,
                 covid_hosp_cat, 
@@ -176,35 +176,15 @@ fup_table <- cleaned_data %>%
   dplyr::select(pt_start_year, everything())
 
 table2 <- fup_table %>% 
+  dplyr::select(no_prev_vacc, any_of(names(var_labels_full))) %>% 
   tbl_summary(
     by = no_prev_vacc,
+    label = unname(var_labels_full[-1]),
     statistic = list(
       all_continuous() ~ "{p50} ({p25}-{p75})",
       all_categorical() ~ "{n} ({p}%)"
     ),
-    digits = all_continuous() ~ 1,
-    label = list(
-      pt_start_year = "Follow-up start (year)",
-      sex = "Sex",
-      t = "Follow-up time (years)",
-      age = "Age",
-      age_cat = "Age (categorised)",
-      ethnicity = "Ethnicity",
-      practice_nuts = "NHS region",
-      imd_q5 = "Index of multiple deprivation (quintile)",
-      comorbidities = "Comorbidities",
-      care_home = "Resident in care home",
-      highrisk_shield = "High risk shielding category",
-      lowrisk_shield = "Low/moderate risk shielding category",
-      lc_out = "Any Long COVID record", 
-      lc_dx_only = "Long COVID diagnosis",
-      lc_cat = "Long COVID record by prior status",
-      fracture = "Hospital record of fracture", 
-      covid_hosp_cat = "COVID-19 hospitalisations (n)",
-      covid_primary_cat = "COVID-19 primary care record (n)", 
-      test_positive_cat = "COVID-19 positive tests (n)",
-      vaccine_schedule_detail = "Vaccination schedule received"
-    )
+    digits = all_continuous() ~ 1
   ) %>%
   bold_labels() %>%
   add_overall()
