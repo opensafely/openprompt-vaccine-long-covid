@@ -19,17 +19,22 @@ if(max(adjusted_rates_out$conf.high, na.rm = T) > 2e200){
   adjusted_rates_out <- adjusted_rates_out %>% 
     filter(conf.high<2e200)
 }
+if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
+  print("max std. error is strangely high for:")
+  glimpse(filter(adjusted_rates_out, std_error > 1))
+  print("removing this from the plots")
+  adjusted_rates_out <- adjusted_rates_out %>% 
+    filter(std_error<1)
+}
 outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
 cols <- hcl.colors(20, palette = "Viridis")[c(1,10,18)]
 names(cols) <- outcome_list
-print("colours defined")
 
 # plot adjusted rates -----------------------------------------------------
 pdf(here("output/figures/fig3a_rate_ratios.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
 adjusted_rates_out %>% 
   filter(plot_marker) %>% 
-  filter(conf.high<2e200) %>% 
   ggplot(aes(x=term2, y = rate, ymin = conf.low, ymax = conf.high, colour = outcome, lty = model, alpha = model)) +
   geom_point(size = 1.5, pch = 16, position = pd) +
   geom_linerange(lwd = 1, position = pd) +
@@ -44,7 +49,6 @@ adjusted_rates_out %>%
   theme(legend.position = "top",
         strip.background = element_blank())
 dev.off()
-print("plot 1 done")
 
 pdf(here("output/figures/fig3b_rate_ratios_longcovid.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
@@ -64,7 +68,6 @@ adjusted_rates_out %>%
   theme(legend.position = "top",
         strip.background = element_blank())
 dev.off()
-print("plot 2 done")
 
 pdf(here("output/figures/fig3c_rate_ratios_adjustedonly.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
@@ -84,7 +87,6 @@ adjusted_rates_out %>%
   theme(legend.position = "top",
         strip.background = element_blank())
 dev.off()
-print("plot 3 done")
 
 pdf(here("output/figures/fig3d_rate_ratios_controloutcome.pdf"), width = 12, height = 14)
 pd = position_dodge(1)
@@ -104,4 +106,3 @@ adjusted_rates_out %>%
   theme(legend.position = "top",
         strip.background = element_blank())
 dev.off()
-print("plot 4 done")
