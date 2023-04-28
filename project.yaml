@@ -43,6 +43,19 @@ actions:
         txt3: output/data_properties/clean_dataset_skim.txt
         txt4: output/data_properties/clean_dataset_tabulate.txt
 
+  clean_lc_pre_vacc_data: 
+    run: >
+      r:latest
+        analysis/0101_clean_lcfirst_cohort.R
+    needs: [generate_dataset_lc_pre_vacc]
+    outputs: 
+      highly_sensitive: 
+        cleandata_lcfirst: output/clean_dataset_lc_first.gz.parquet
+      moderately_sensitive: 
+        txt5: output/data_properties/lcfirst_cohort_skim.txt
+        txt6: output/data_properties/lcfirst_cohort_tabulate.txt
+        tab1_lc_first: output/tables/tab1_full_description_lc_first.html
+
   summarise_cohort_at_baseline: 
     run: >
       r:latest

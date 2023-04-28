@@ -15,6 +15,9 @@ source(here::here("analysis/functions/time_update_vaccinedoses.R"))
 
 lc_data_path <- here("output/dataset_lc_pre_vacc.csv.gz")
 
+output_dir_tab <- here("output/tables")
+fs::dir_create(output_dir_tab)
+
 # import, combine, clean data -------------------------------------------------
 imported_data <- readr::read_csv(lc_data_path) %>% 
   janitor::clean_names()
@@ -23,10 +26,9 @@ spec(imported_data) %>% print()
 imported_data_unvacced <- imported_data %>% 
   filter(already_vacced == 0)
 
-summarise_data(data_in = import_data, filenamebase = "lcfirst_cohort")
+summarise_data(data_in = imported_data, filenamebase = "lcfirst_cohort")
 summarise_data(data_in = imported_data_unvacced, filenamebase = "lcfirst_cohort_unvacced")
 
-imported_data_unvacced %>% glimpse()
 imported_data_unvacced <- imported_data_unvacced %>% 
   mutate(
     imd_q5 = cut(imd,
@@ -96,6 +98,13 @@ imported_data_unvacced <- imported_data_unvacced %>%
     labels = c(as.character(0:4), "5+", "5+"))
   ) 
 
+
+# export the cleaned_data -------------------------------------------------
+arrow::write_parquet(imported_data_unvacced,
+                     sink = here::here("output/clean_dataset_lc_first.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+
+# create table1 -----------------------------------------------------------
 var_labels <- list(
   N  ~ "Total N",
   post_lc_vaccines ~ "Number of vaccines post COVID",
@@ -112,6 +121,8 @@ var_labels <- list(
 var_labels <- var_labels %>%
   set_names(., map_chr(., all.vars))
 
+
+
 tab1 <- imported_data_unvacced %>% 
   dplyr::select(lc_dx_flag, any_of(names(var_labels))) %>% 
   tbl_summary(
@@ -126,4 +137,10 @@ tab1 <- imported_data_unvacced %>%
   bold_labels() %>%
   add_overall()
 
-tab1
+tab1 %>%
+  as_gt() %>%
+  gt::gtsave(
+    filename = "tab1_full_description_lc_first.html",
+    path = fs::path(output_dir_tab)
+  )
+
