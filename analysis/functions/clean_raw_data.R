@@ -40,7 +40,7 @@ clean_raw_data <- function(data_in){
       # create an age category variable for easy stratification
       age_cat = cut(
         age, 
-        breaks = c(0, 31, 41, 51, 61, 71, Inf),
+        breaks = c(0, seq(30, 70, 10), Inf),
         labels = c(
           "18-29",
           "30-39",
@@ -120,7 +120,7 @@ clean_raw_data <- function(data_in){
                   care_home, care_home_nursing, care_home_code,
                   highrisk_shield, lowrisk_shield,
                   ons_death_date, death_date,
-                  all_test_positive, all_tests,
+                  latest_test_before_diagnosis, all_test_positive, all_tests,
                   first_covid_hosp, first_covid_discharge, all_covid_hosp,
                   first_covid_critical, first_covid_hosp_primary_dx,
                   latest_primarycare_covid, total_primarycare_covid,
