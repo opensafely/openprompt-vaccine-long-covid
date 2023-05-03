@@ -56,23 +56,6 @@ actions:
         txt6: output/data_properties/lcfirst_cohort_tabulate.txt
         tab1_lc_first: output/tables/tab1_full_description_lc_first.html
 
-  summarise_cohort_at_baseline: 
-    run: >
-      r:latest
-        analysis/013_create_table1.R
-    needs: [clean_the_data]
-    outputs: 
-      moderately_sensitive: 
-        table1: output/tables/tab1_baseline_description.html
-        table1_csv: output/table1_data.csv
-        table1_red: output/tables/tab1_baseline_description_redacted.html
-        table2: output/tables/tab2_full_description.html
-        table2_csv: output/table2_data.csv
-        table2_red: output/tables/tab2_full_descripion_redacted.html
-        start_end_hist: output/supplementary/histogram_start_end_dates.pdf
-        vaccine_lc_gap: output/supplementary/fig_vaccines_longcovid_gap.pdf
-        vaccine_lc_gap_csv: output/supplementary/vaccines_longcovid_gap.csv
-  
   time_update_data: 
     run: >
       r:latest
@@ -96,6 +79,32 @@ actions:
         txt4: output/data_properties/timeupdated_lc_all_tabulate.txt
         lc_all_t_plot: output/supplementary/time_updated_t_byvaccines.pdf
         lc_dx_t_plot: output/supplementary/time_updated_t_byvaccines_lc_dx.pdf
+  
+  summarise_cohort_at_baseline: 
+    run: >
+      r:latest
+        analysis/013_create_table1.R
+    needs: [clean_the_data]
+    outputs: 
+      moderately_sensitive: 
+        table1: output/tables/tab1_baseline_description.html
+        table1_csv: output/table1_data.csv
+        table1_red: output/tables/tab1_baseline_description_redacted.html
+        table2: output/tables/tab2_full_description.html
+        table2_csv: output/table2_data.csv
+        table2_red: output/tables/tab2_full_descripion_redacted.html
+        start_end_hist: output/supplementary/histogram_start_end_dates.pdf
+        vaccine_lc_gap: output/supplementary/fig_vaccines_longcovid_gap.pdf
+        vaccine_lc_gap_csv: output/supplementary/vaccines_longcovid_gap.csv
+
+  calculate_monthly_dynamics: 
+    run: > 
+      r:latest
+        analysis/014_calculate_monthly_dynamics.R
+    needs: [clean_the_data]
+    outputs: 
+      moderately_sensitive: 
+        monthly_dynamics: output/data_monthly_dynamics.csv
 
   crude_rates:
     run: >
@@ -127,6 +136,17 @@ actions:
         rawcountsplot: output/figures/fig2_raw_counts_line.pdf
         rawcount: output/figures/fig2b_raw_counts_column.pdf
         vaccinegap: output/supplementary/fig_agegap_vaccines.pdf
+
+  plot_monthly_dynamics:
+    run: >
+      r:latest
+        analysis/031_plot_outbreak_dynamics.R
+    needs: [calculate_monthly_dynamics]
+    outputs:
+      moderately_sensitive:
+        monthly_plot_v1: output/figures/fig4a_outbreak_dynamics.pdf
+        monthly_plot_v2: output/figures/fig4b_outbreak_dynamics_cumulative.pdf
+        monthly_plot_v3: output/figures/fig4c_outbreak_dynamics_experimental.pdf
 
   poisson_rates_static:
     run: >
