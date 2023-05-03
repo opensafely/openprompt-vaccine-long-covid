@@ -14,10 +14,6 @@ dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 # import data ------------------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 
-vaccgroups <- levels(cleaned_data$vaccines)
-n_groups <- length(vaccgroups)
-colours <- hcl.colors(n_groups, palette = "viridis")
-
 # convert to time series --------------------------------------------------
 datevars <- select_if(cleaned_data, is.Date) %>% 
   names()
