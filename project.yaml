@@ -147,6 +147,20 @@ actions:
         monthly_plot_v1: output/figures/fig4a_outbreak_dynamics.pdf
         monthly_plot_v2: output/figures/fig4b_outbreak_dynamics_cumulative.pdf
         monthly_plot_v3: output/figures/fig4c_outbreak_dynamics_experimental.pdf
+        monthly_plot_v4: output/figures/fig4d_outbreak_dynamics_log.pdf
+        monthly_plot_v5: output/figures/fig4e_longcovid_and_national_cases.pdf
+
+  plot_longcovid_flows:
+    run: >
+      r:latest
+        analysis/032_pathways_to_longcovid.R
+    needs: [clean_the_data]
+    outputs:
+      moderately_sensitive:
+        tests_lc_table: output/tables/tab_tests_and_longcovid.html
+        tests_density: output/supplementary/test_to_longcovid_density.pdf
+        longcovid_flows: output/figures/fig5_longcovid_flows.pdf
+        longcovid_flows_v2: output/figures/fig5_longcovid_flows_v2.pdf
 
   poisson_rates_static:
     run: >
