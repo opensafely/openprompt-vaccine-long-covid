@@ -47,9 +47,10 @@ dt_monthly[, n_first_lc := mapply(count_date_events, month = month_start_date, d
 dt_monthly[, n_first_lc_dx := mapply(count_date_events, month = month_start_date, date_var = "first_lc_dx")]
 dt_monthly[, n_hospitalised := mapply(count_date_events, month = month_start_date, date_var = "first_covid_hosp")]
 dt_monthly[, n_tested := mapply(count_date_events, month = month_start_date, date_var = "latest_test_before_diagnosis")]
+dt_monthly[, n_vacc := mapply(count_date_events, month = month_start_date, date_var = "vaccine_dose_1_date")]
 
 # Calculate monthly incidence and cumulative monthly incidence
-cols_to_process <- c("first_lc", "first_lc_dx", "hospitalised", "tested")
+cols_to_process <- c("first_lc", "first_lc_dx", "hospitalised", "tested", "vacc")
 
 for (col in cols_to_process) {
   # Calculate monthly incidence
