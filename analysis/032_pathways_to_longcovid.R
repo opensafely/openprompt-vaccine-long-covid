@@ -15,6 +15,8 @@ fs::dir_create(output_dir_tab)
 # import data ------------------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 
+lc_dx_cols <- c("coral", "aquamarine2")
+
 # relationship between test positive and long COVID -----------------------
 summ_data <- cleaned_data %>% 
   dplyr::select(patient_id,
@@ -62,8 +64,8 @@ ggplot(gap_plot, aes(x = testgap, fill = lc_dx_flag)) +
   geom_vline(data = summ_gap_plot, aes(xintercept = avggap, colour = lc_dx_flag)) +
   labs(x = "Weeks between test and code",
        y = "Density",
-       colour = "Any or Dx code",
-       fill = "Any or Dx code") +
+       colour = "Rx or Dx code",
+       fill = "Rx or Dx code") +
   theme_ali()
 dev.off()
 
@@ -93,9 +95,9 @@ sankey_data <- cleaned_data %>%
     test,
     hosp
   ) 
-# sankey_data$hosp <- sample(c("None", 
+
+# sankey_data$hosp <- sample(c("None",
 #                              "Hospital admission",
-#                              "Primary admission",
 #                              "ICU admission"),
 #                            size = nrow(sankey_data),
 #                            replace = TRUE)
@@ -108,38 +110,24 @@ is_alluvia_form(as.data.frame(sankey_plot), axes = 1:4, silent = TRUE)
 
 # reorder vars as factors
 sankey_plot$lc_dx_flag <- factor(sankey_plot$lc_dx_flag, 
-                                 levels = c("None", "Rx", "Dx"))
+                                 levels = c("None", "Dx", "Rx"))
 sankey_plot$hosp <- factor(sankey_plot$hosp, 
                            levels = rev(c("None", 
                                       "Hospital admission",
                                       "ICU admission")))
 sankey_plot$hosp[sankey_plot$hosp=="None"] <- NA
+  
+sankey_plotv2 <- sankey_plot %>% 
+  filter(lc_dx_flag != "None")
 
 pdf(here("output/figures/fig5_longcovid_flows.pdf"), width = 8, height = 6)
-ggplot(sankey_plot,
-       aes(y = freq, axis1 = test, axis2 = hosp, axis3 = lc_dx_flag)) +
-  geom_alluvium(aes(fill = lc_dx_flag), width = 1/6) +
-  geom_stratum(width = 1/6, fill = "gray70", color = "grey40") +
-  geom_label(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_x_discrete(limits = c("Test positive", "Hospitalised", "Long COVID record"), expand = c(.05, .05)) +
-  scale_fill_brewer(type = "qual", palette = "Set1") +
-  labs(fill = "Long COVID record",
-       y = "Frequency", 
-       x = "COVID-19 status") + 
-  theme_ali() + 
-  theme(legend.position = "top")
-dev.off()
-
-sankey_plotv2 <- sankey_plot
-sankey_plotv2$lc_dx_flag[sankey_plotv2$lc_dx_flag=="None"] <- NA
-pdf(here("output/figures/fig5_longcovid_flows_v2.pdf"), width = 8, height = 6)
 ggplot(sankey_plotv2,
        aes(y = freq, axis1 = test, axis2 = hosp, axis3 = lc_dx_flag)) +
   geom_alluvium(aes(fill = lc_dx_flag), width = 1/6) +
   geom_stratum(width = 1/6, fill = "gray70", color = "grey40") +
   geom_label(stat = "stratum", aes(label = after_stat(stratum))) +
   scale_x_discrete(limits = c("Test positive", "Hospitalised", "Long COVID record"), expand = c(.05, .05)) +
-  scale_fill_brewer(type = "qual", palette = "Set1") +
+  scale_fill_manual(values = lc_dx_cols) +
   labs(fill = "Long COVID record",
        y = "Frequency", 
        x = "COVID-19 status") + 
