@@ -129,21 +129,16 @@ actions:
     run: >
       r:latest
         analysis/030_plotrates.R
-    needs: [clean_the_data, time_update_data]
+    needs: [time_update_data, calculate_monthly_dynamics]
     outputs:
       moderately_sensitive:
-        cuminc: output/figures/fig1_cumulative_incidence.pdf
-        rawcountsplot: output/figures/fig2_raw_counts_line.pdf
-        rawcount: output/figures/fig2b_raw_counts_column.pdf
+        counts_line: output/figures/fig2_raw_counts_line.pdf
+        counts_line_sex: output/figures/fig2a_raw_counts_line_bysex.pdf
+        countscolumn: output/figures/fig2b_raw_counts_column.pdf
+        countscolumn_sex: output/figures/fig2c_raw_counts_column_bysex.pdf
+        stackedbar: output/figures/fig2e_longcovid_stacked_dx_rx.pdf
+        multipanelfig: output/figures/fig2_longcovid_dynamics.pdf
         vaccinegap: output/supplementary/fig_agegap_vaccines.pdf
-
-  plot_monthly_dynamics:
-    run: >
-      r:latest
-        analysis/031_plot_outbreak_dynamics.R
-    needs: [calculate_monthly_dynamics]
-    outputs:
-      moderately_sensitive:
         monthly_plot_v1: output/figures/fig4a_outbreak_dynamics.pdf
         monthly_plot_v2: output/figures/fig4b_outbreak_dynamics_cumulative.pdf
         monthly_plot_v3: output/figures/fig4c_outbreak_dynamics_experimental.pdf
@@ -160,7 +155,6 @@ actions:
         tests_lc_table: output/tables/tab_tests_and_longcovid.html
         tests_density: output/supplementary/test_to_longcovid_density.pdf
         longcovid_flows: output/figures/fig5_longcovid_flows.pdf
-        longcovid_flows_v2: output/figures/fig5_longcovid_flows_v2.pdf
 
   poisson_rates_static:
     run: >
