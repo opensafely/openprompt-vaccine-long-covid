@@ -155,6 +155,7 @@ actions:
         tests_lc_table: output/tables/tab_tests_and_longcovid.html
         tests_density: output/supplementary/test_to_longcovid_density.pdf
         longcovid_flows: output/figures/fig5_longcovid_flows.pdf
+        longcovid_flows_data: output/sankey_plot_data.csv
 
   poisson_rates_static:
     run: >

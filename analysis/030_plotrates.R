@@ -13,7 +13,7 @@ source(here::here("analysis/functions/ggplot_theme.R"))
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 
-redact_threshold <- 0
+redact_threshold <- 10
 
 # import data ------------------------------------------------------------
 dt_monthly <- readr::read_csv(here::here("output/data_monthly_dynamics.csv"))
@@ -24,13 +24,34 @@ time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc
 time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_dx.gz.parquet")) %>%
   rename(lc_dx = out)
 
+#  suppress test, vaccination and hospitalisation data at the end of fup -----
+# We did not record hospitalisations or tests at the end of follow up \
+#  because there was not enough time for those infections to become   \
+#. recorded long covid cases. So the zeroes are misleading
+#. Need to replace the 0s in the last 3 months of data as NA
+
+df_rows <- nrow(dt_monthly)
+suppress3months <- (df_rows-2):df_rows
+
+dt_monthly$n_hospitalised[suppress3months] <- NA
+dt_monthly$n_tested[suppress3months] <- NA
+dt_monthly$n_vacc[suppress3months] <- NA
+
+dt_monthly$inc_hospitalised[suppress3months] <- NA
+dt_monthly$inc_tested[suppress3months] <- NA
+dt_monthly$inc_vacc[suppress3months] <- NA
+
+dt_monthly$cum_inc_hospitalised[suppress3months] <- NA
+dt_monthly$cum_inc_tested[suppress3months] <- NA
+dt_monthly$cum_inc_vacc[suppress3months] <- NA
+
 # define colours ----------------------------------------------------------
 cols <- c(
   "long COVID" = "red1",
   "long COVID Dx" = "dodgerblue1",
   "Hospitalised" = "orange",
   "Last test positive" = "black",
-  "Vaccinated" = "blueviolet")
+  "1st vaccine dose" = "blueviolet")
 
 lc_dx_cols <- c("coral", "aquamarine2")
 
@@ -65,18 +86,24 @@ timeseries_lc_dx <- NULL
 
 timeseries_plot$redacted_out <- timeseries_plot$sum_out # redactor2(timeseries_plot$sum_out, threshold = 10)
 
-p1 <- timeseries_plot %>% 
+# for p2 need to agregate by sex to get a single panel plot
+p2_data <- timeseries_plot %>% 
+  group_by(date, outcome) %>% 
+  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = 0), .groups = "keep")
+
+# group by sex as well redact data for 2x2 plot
+p2b_data <- timeseries_plot %>% 
   group_by(date, sex, outcome) %>% 
-  summarise(sum_out = sum(sum_out), .groups = "keep") %>% 
-  mutate(redacted_out = redactor2(sum_out, threshold = redact_threshold)) %>% 
-  ggplot(aes(x = date, y = redacted_out, colour = outcome, fill = outcome)) +
+  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = 0), .groups = "keep")
+
+p_base <- ggplot(p2_data, aes(x = date, y = redacted_out, colour = outcome, fill = outcome)) +
     labs(x = "Date", y = "Count of Long COVID codes") +
     scale_color_manual(values = cols[1:2]) +
     scale_fill_manual(values = cols[1:2]) +
     theme_ali() + 
     theme(strip.background = element_blank())
 
-p2 <- p1 + 
+p2 <- p_base + 
   geom_line(lwd = 0.2, lty = 1) +
   labs(colour = "Long COVID record") +
   theme(legend.position = "top")
@@ -84,8 +111,8 @@ pdf(here("output/figures/fig2_raw_counts_line.pdf"), width = 8, height = 6)
   p2
 dev.off()
 
-p2a <- p1 +
-  geom_col(col = "gray20", lwd = 0.2) +
+p2a <- p_base +
+  geom_col(data = p2b_data, col = "gray20", lwd = 0.2) +
   facet_grid(sex~outcome) +
   theme(legend.position = "none")
 
@@ -140,11 +167,12 @@ p4a <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = (inc_first_lc_dx*100), color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = (inc_hospitalised*100), color = "Hospitalised"), lwd = 1) +
   #geom_line(aes(y = (inc_tested*100), color = "Last test positive"), lwd = 1) +
-  #geom_line(aes(y = (inc_vacc*100), color = "Vaccinated"), lwd = 1) +
+  #geom_line(aes(y = (inc_vacc*100), color = "1st vaccine dose"), lwd = 1) +
   labs(x = "Month", y = "Incidence (%)", 
        colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
-  theme_ali()
+  theme_ali() +
+  theme(legend.position = "bottom")
 
 pdf(here("output/figures/fig4a_outbreak_dynamics.pdf"), width = 8, height = 6)
   p4a
@@ -156,10 +184,11 @@ p4b <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = cum_inc_first_lc_dx*100, color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = cum_inc_hospitalised*100, color = "Hospitalised"), lwd = 1) +
   #geom_line(aes(y = cum_inc_tested*100, color = "Last test positive"), lwd = 1) +
-  #geom_line(aes(y = cum_inc_vacc*100, color = "Vaccinated"), lwd = 1) +
+  #geom_line(aes(y = cum_inc_vacc*100, color = "1st vaccine dose"), lwd = 1) +
   labs(x = "Month", y = "Cumulative incidence (%)", colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
-  theme_ali()
+  theme_ali() + 
+  theme(legend.position = "bottom")
 
 pdf(here("output/figures/fig4b_outbreak_dynamics_cumulative.pdf"), width = 8, height = 6)
   p4b
@@ -169,12 +198,13 @@ dev.off()
 p4c <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = cum_inc_first_lc*100, color = "long COVID"), lwd = 1) +
   geom_line(aes(y = cum_inc_first_lc_dx*100, color = "long COVID Dx"), lwd = 1) +
-  geom_line(aes(y = inc_vacc*100, color = "Vaccinated"), lwd = 1) +
+  geom_line(aes(y = inc_vacc*100, color = "1st vaccine dose"), lwd = 1) +
   geom_line(aes(y = inc_tested*100, color = "Last test positive"), lwd = 1) +
   labs(x = "Month", y = "Incidence (%)", 
        colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
-  theme_ali()
+  theme_ali() +
+  theme(legend.position = "bottom")
 
 pdf(here("output/figures/fig4c_outbreak_dynamics_experimental.pdf"), width = 8, height = 6)
   p4c
@@ -193,7 +223,7 @@ p4d <- ggplot(dt_monthly, aes(x = month_start_date)) +
 pdf(here("output/figures/fig4d_outbreak_dynamics_log.pdf"), width = 8, height = 6)
   p4d +
     geom_line(aes(y = log2(inc_hospitalised), color = "Hospitalised"), lwd = 1) +
-    geom_line(aes(y = log2(inc_vacc), color = "Vaccinated"), lwd = 1)
+    geom_line(aes(y = log2(inc_vacc), color = "1st vaccine dose"), lwd = 1)
 dev.off()
 
 # compare long COVID dynamics to England data -----------------------------
@@ -202,6 +232,7 @@ plot_uk_gov_cases <- uk_gov_cases %>%
   mutate(roll_mean = zoo::rollmean(newCasesBySpecimenDate, 7, na.pad = T))
 
 ## make the plot using base R for dual-axes
+pdf(here("output/figures/fig4e_longcovid_and_national_cases.pdf"), width = 8, height = 6)
 par(mar=c(4,4,1,4))
 plot(
   dt_monthly$month_start_date,
@@ -220,10 +251,6 @@ plot(plot_uk_gov_cases$date, plot_uk_gov_cases$roll_mean, type = "l", col = 1, l
 axis(side = 4)
 mtext("Positive cases in England (7-day average)", side = 4, padj = 4)
 legend("topleft", legend = c("long COVID", "long COVID Dx only", "Positive COVID-19 tests (Eng)"), lty = 1, col = c(cols[1:2], 1))
-p2d <- recordPlot()
-
-pdf(here("output/figures/fig4e_longcovid_and_national_cases.pdf"), width = 8, height = 6)
-  p2d
 dev.off()
 
 # stacked bar chart for proportion Rx vs Dx -------------------------------
@@ -246,7 +273,7 @@ dev.off()
 
 # put together the nice figure for the paper ------------------------------
 p2_full <- cowplot::plot_grid(
-  p2, p2b, p4d, p2e,
+  p2, p2b, p4a, p2e,
   ncol = 2,
   labels = "AUTO"
   )

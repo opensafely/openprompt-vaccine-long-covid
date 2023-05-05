@@ -84,7 +84,6 @@ sankey_data <- cleaned_data %>%
     lc_dx_flag = replace_na(as.character(lc_dx_flag), "None"),
     test = all_test_positive > 0,
     hosp = case_when(
-      all_covid_hosp > 0 & first_covid_critical ~ "ICU admission", 
       all_covid_hosp > 0 ~ "Hospital admission", 
       all_covid_hosp == 0 ~ "None"
     )
@@ -103,22 +102,25 @@ sankey_data <- cleaned_data %>%
 #                            replace = TRUE)
 sankey_plot <- sankey_data %>% 
   group_by(lc_dx_flag, test, hosp) %>% 
-  summarise(freq = n()) %>% 
+  summarise(freq = n(), .groups = "keep") %>% 
   ungroup()
 is_alluvia_form(as.data.frame(sankey_plot), axes = 1:4, silent = TRUE)
-
 
 # reorder vars as factors
 sankey_plot$lc_dx_flag <- factor(sankey_plot$lc_dx_flag, 
                                  levels = c("None", "Dx", "Rx"))
 sankey_plot$hosp <- factor(sankey_plot$hosp, 
                            levels = rev(c("None", 
-                                      "Hospital admission",
-                                      "ICU admission")))
-sankey_plot$hosp[sankey_plot$hosp=="None"] <- NA
-  
+                                      "Hospital admission")))
+
+sankey_plot$freq <- redactor2(sankey_plot$freq, threshold = 10)
+
+readr::write_csv(sankey_plot, here::here("output/sankey_plot_data.csv"))
+
 sankey_plotv2 <- sankey_plot %>% 
-  filter(lc_dx_flag != "None")
+  filter(lc_dx_flag != "None") %>% 
+  filter(!is.na(freq))
+sankey_plotv2$hosp[sankey_plotv2$hosp=="None"] <- NA
 
 pdf(here("output/figures/fig5_longcovid_flows.pdf"), width = 8, height = 6)
 ggplot(sankey_plotv2,
