@@ -182,7 +182,12 @@ actions:
     needs: [poisson_rates_static, poisson_rates_timeupdated]
     outputs: 
       moderately_sensitive: 
-        poissonplots_all: output/figures/fig3a_rate_ratios.pdf
-        poissonplots_lc: output/figures/fig3b_rate_ratios_longcovid.pdf
-        poissonplots_lc_adjusted: output/figures/fig3c_rate_ratios_adjustedonly.pdf
-        poissonplots_control: output/figures/fig3d_rate_ratios_controloutcome.pdf
+        fig3a: output/figures/fig3a_crude_RRs.pdf
+        fig3b: output/figures/fig3b_adjusted_RRs.pdf
+        fig3c: output/figures/fig3c_longcovid_RRs.pdf
+        fig3d: output/figures/fig3d_longcovid_models.pdf
+        fig3e: output/figures/fig3e_vaccines.pdf
+        fig3f: output/figures/fig3f_longcovid_vaccine_models.pdf
+        fig3g: output/figures/fig3g_demographics.pdf
+        poissonplots_all: output/figures/fig3h_rate_ratios_facet.pdf
+      
