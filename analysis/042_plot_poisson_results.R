@@ -41,7 +41,7 @@ full_rates <- adjusted_rates_out %>%
   mutate(textrate = sprintf("%0.1f", round(rate, digits = 1)),
          textci = sprintf(paste0("(", round(conf.low, 1), "-", round(conf.high, 1), ")"))) %>% 
   # get rid of the variable names as part of the term2 label
-  mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_detail")) %>% 
+  mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_mrna|t_vacc_primary")) %>% 
   mutate_at(c("term2"), ~ifelse(str_detect(term2, "baseline"), paste0(".", term2), .)) %>% 
   mutate(term2 = str_replace_all(term2, "\\(", " \\(")) %>% 
   mutate(term2 = str_replace_all(term2, "  \\(", " \\(")) %>% 
@@ -54,7 +54,8 @@ full_rates <- adjusted_rates_out %>%
       "Age category",
       "Sex",
       "No. vaccine doses",
-      "Vaccine schedule (detail)",
+      "First vaccine received",
+      "mRNA vaccine received",
       "Region",
       "Ethnicity",
       "Comorbidities",
@@ -202,7 +203,7 @@ dev.off()
 
 # non Vaccine stratifiers
 pdf(here("output/figures/fig3g_demographics.pdf"), width = 20, height = 12)
-  create_forest_plot(filter(full_rates, !str_detect(strat_var, "accine") & model == "crude"), y_col_var = "outcome",
+  create_forest_plot(filter(full_rates, !str_detect(strat_var, "accine") & model == "adjusted"), y_col_var = "outcome",
                    plot_rel_widths = c(7, 3))
 dev.off()
 

@@ -35,14 +35,16 @@ calculate_timeupdated_rates <- function(data, grouping_var){
 # calculate crude rates ---------------------------------------------------
 time_updated_rates_all <- bind_rows(
   calculate_timeupdated_rates(time_data_lc_all, vaccines),
-  calculate_timeupdated_rates(time_data_lc_all, t_vacc_detail)
+  calculate_timeupdated_rates(time_data_lc_all, t_vacc_mrna),
+  calculate_timeupdated_rates(time_data_lc_all, t_vacc_primary)
 )
 time_updated_rates_all %>% 
   write_csv(here("output/tab022_tuv_rates_lc_all.csv"))
 
 time_updated_rates_dx <- bind_rows(
   calculate_timeupdated_rates(time_data_lc_dx, vaccines),
-  calculate_timeupdated_rates(time_data_lc_dx, t_vacc_detail)
+  calculate_timeupdated_rates(time_data_lc_dx, t_vacc_mrna),
+  calculate_timeupdated_rates(time_data_lc_dx, t_vacc_primary)
 )
 time_updated_rates_dx %>% 
   write_csv(here("output/tab023_tuv_rates_lc_dx.csv"))

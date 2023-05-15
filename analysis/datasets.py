@@ -74,15 +74,17 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .ctv3_code.to_category(codelists.ethnicity)
 
     # covid tests ------------------------------------------------------------
-    dataset.latest_test_before_diagnosis = sgss_covid_all_tests \
+    positive_tests = sgss_covid_all_tests \
         .where(sgss_covid_all_tests.is_positive) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
+        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
+
+    dataset.latest_test_before_diagnosis = positive_tests \
         .sort_by(sgss_covid_all_tests.specimen_taken_date).last_for_patient().specimen_taken_date
 
-    dataset.all_test_positive = sgss_covid_all_tests \
-        .where(sgss_covid_all_tests.is_positive) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
+    dataset.first_test_positive = positive_tests \
+        .sort_by(sgss_covid_all_tests.specimen_taken_date).first_for_patient().specimen_taken_date
+
+    dataset.all_test_positive = positive_tests \
         .count_for_patient()
 
     dataset.all_tests = sgss_covid_all_tests \
@@ -141,6 +143,21 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     dataset.date_last_vacc = all_vacc.sort_by(all_vacc.date).last_for_patient().date
     dataset.last_vacc_gap = (dataset.pt_end_date - dataset.date_last_vacc).days
 
+    # Vaccines, create some mappings from vaccine product_names to general descriptors
+    product_to_mf = {
+        "COVID-19 mRNA Vaccine Comirnaty 30micrograms/0.3ml dose conc for susp for inj MDV (Pfizer)": "Pfizer",
+        "COVID-19 Vaccine Vaxzevria 0.5ml inj multidose vials (AstraZeneca)": "AstraZeneca",
+        "*": "Other"
+    }
+
+    product_to_mrna = {
+        "COVID-19 mRNA Vaccine Comirnaty 30micrograms/0.3ml dose conc for susp for inj MDV (Pfizer)": "mRNA",
+        "COVID-19 mRNA Vaccine Comirnaty Children 5-11yrs 10mcg/0.2ml dose con for disp for inj MDV (Pfizer)": "mRNA",
+        "COVID-19 mRNA Vaccine Spikevax (nucleoside modified) 0.1mg/0.5mL dose disp for inj MDV (Moderna)": "mRNA",
+        "Comirnaty COVID-19 mRNA Vacc ready to use 0.3ml in md vials": "mRNA",
+        "COVID-19 Vaccine Moderna (mRNA-1273.529) 50micrograms/0.25ml dose sol for in MOV": "mRNA",
+    }
+
     # FIRST VACCINE DOSE ------------------------------------------------------------
     # first vaccine dose was 8th December 2020
     vaccine_dose_1 = all_vacc \
@@ -148,7 +165,8 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .sort_by(all_vacc.date) \
         .first_for_patient()
     dataset.vaccine_dose_1_date = vaccine_dose_1.date
-    dataset.vaccine_dose_1_manufacturer = vaccine_dose_1.product_name
+    dataset.vaccine_dose_1_manufacturer = vaccine_dose_1.product_name.map_values(product_to_mf)
+    dataset.vaccine_dose_1_mrna = vaccine_dose_1.product_name.map_values(product_to_mrna)
 
     # SECOND VACCINE DOSE ------------------------------------------------------------
     # first recorded 2nd dose was 29th December 2020
@@ -159,7 +177,8 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .sort_by(all_vacc.date) \
         .first_for_patient()
     dataset.vaccine_dose_2_date = vaccine_dose_2.date
-    dataset.vaccine_dose_2_manufacturer = vaccine_dose_2.product_name
+    dataset.vaccine_dose_2_manufacturer = vaccine_dose_2.product_name.map_values(product_to_mf)
+    dataset.vaccine_dose_2_mrna = vaccine_dose_2.product_name.map_values(product_to_mrna)
 
     # BOOSTER VACCINE DOSE -----------------------------------------------------------
     # first recorded booster dose was 2021-09-24
@@ -170,7 +189,15 @@ def add_common_variables(dataset, study_start_date, end_date, population):
         .sort_by(all_vacc.date) \
         .first_for_patient()
     dataset.vaccine_dose_3_date = vaccine_dose_3.date
-    dataset.vaccine_dose_3_manufacturer = vaccine_dose_3.product_name
+    dataset.vaccine_dose_3_manufacturer = vaccine_dose_3.product_name.map_values(product_to_mf)
+    dataset.vaccine_dose_3_mrna = vaccine_dose_3.product_name.map_values(product_to_mrna)
+
+    # first mRNA date ----------------------------------------------------------------
+    dataset.first_mrna_vaccine_date = case(
+        when(dataset.vaccine_dose_1_mrna.contains("mRNA")).then(dataset.vaccine_dose_1_date),
+        when(dataset.vaccine_dose_2_mrna.contains("mRNA")).then(dataset.vaccine_dose_2_date),
+        when(dataset.vaccine_dose_3_mrna.contains("mRNA")).then(dataset.vaccine_dose_3_date)
+    )
 
     # comorbidities ------------------------------------------------------------------
     # We define baseline variables on the day _before_ the study date (start date = day of

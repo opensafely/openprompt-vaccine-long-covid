@@ -125,7 +125,7 @@ clean_raw_data <- function(data_in){
                   first_covid_critical, first_covid_hosp_primary_dx,
                   latest_primarycare_covid, total_primarycare_covid,
                   covid_hosp_cat, covid_primary_cat, test_positive_cat, test_total_cat,
-                  starts_with("vaccine_dose_"),
+                  starts_with("vaccine_dose_"), first_mrna_vaccine_date,
                   no_prev_vacc, date_last_vacc, last_vacc_gap,
                   first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,
                   t, lc_out, lc_dx_only, lc_cat, fracture

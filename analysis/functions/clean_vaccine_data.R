@@ -12,17 +12,13 @@ tidy_vaccine_data <- function(dataset){
       breaks = c(-Inf, 0:2, Inf),
       labels = c(as.character(0:2), "3+")
     )) 
-  #df_full$no_prev_vacc <- factor(is.na(df_full$vaccine_dose_1_date) +
-  #                       is.na(df_full$vaccine_dose_2_date) +
-  #                       is.na(df_full$vaccine_dose_3_date),
-  #                       labels = c("3+", "2", "1", "0"))
   
   # create variable indicating whether all vaccines have been of same type
   mix_and_match_vacc_interim <- df_full %>% 
     dplyr::select(patient_id, no_prev_vacc, no_prev_vacc, contains("vaccine_dose")) %>% 
-    mutate(mRNA1 = stringr::str_detect(vaccine_dose_1_manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer"),
-           mRNA2 = stringr::str_detect(vaccine_dose_2_manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer"),
-           mRNA3 = stringr::str_detect(vaccine_dose_3_manufacturer, pattern = "mRNA|mrna|comirnarty|moderna|pfizer")) %>% 
+    mutate(mRNA1 = stringr::str_detect(vaccine_dose_1_mrna, pattern = "mRNA"),
+           mRNA2 = stringr::str_detect(vaccine_dose_2_mrna, pattern = "mRNA"),
+           mRNA3 = stringr::str_detect(vaccine_dose_3_mrna, pattern = "mRNA")) %>% 
     # calculate different combinations of first 3 doses 
     mutate(
       no_vaccine = case_when(

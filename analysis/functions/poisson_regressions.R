@@ -14,7 +14,15 @@ poisson_regressions <- function(cohort_data, stratifier) {
   
   if (number_levels > 1) {
     fm1 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier))
-    fm2 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex"))
+    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex")
+    
+    # need to avoid duplication in fm2 in ase age_cat or sex is the primary stratifier:
+    fm2b <- ifelse(str_detect(stratifier, "age"), 
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex"),
+                  fm2a)
+    fm2 <- ifelse(str_detect(stratifier, "sex"), 
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred"),
+                  fm2b) %>% as.formula()
     
     # remove a lot of the memory intensive fat from the model object but keep necessary bits to predict rates
     shrink_glm_mem <- function(glm_fitted) {
@@ -62,25 +70,17 @@ poisson_regressions <- function(cohort_data, stratifier) {
       bind_rows(intercept_data_to_add)
     poissonmodel_crude <- NULL
   
-    if(!stratifier %in% c("age_cat", "sex")){
-      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
-      adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
-        bind_rows(intercept_data_to_add)
-      poissonmodel_adj <- NULL
-      
-      bind_rows(
-        mutate(crude_output, model = "crude"),
-        mutate(adjusted_output, model = "adjusted"),
-      ) %>% 
-        mutate(plot_marker = stringr::str_detect(term, stratifier),
-               var = stratifier,
-               baseline = stratifier_intercept)
-    }else{
-      crude_output %>% 
-        mutate(model = "crude", 
-               plot_marker = stringr::str_detect(term, stratifier),
-               var = stratifier,
-               baseline = stratifier_intercept)
-    }
+    poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
+    adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
+      bind_rows(intercept_data_to_add)
+    poissonmodel_adj <- NULL
+    
+    bind_rows(
+      mutate(crude_output, model = "crude"),
+      mutate(adjusted_output, model = "adjusted"),
+    ) %>% 
+      mutate(plot_marker = stringr::str_detect(term, stratifier),
+             var = stratifier,
+             baseline = stratifier_intercept)
   }
 }

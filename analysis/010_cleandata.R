@@ -23,7 +23,6 @@ longcovid_combined_codelist <- bind_rows(
 imported_data <-
   import_raw_data(cases_path = cases_data_path, controls_path = controls_data_path)
 
-
 # need these manual overrides with the dummy data
 #data_size <- dim(imported_data)[1]
 #source("analysis/debugging_codes/make_fake_vaccine_codes.R")

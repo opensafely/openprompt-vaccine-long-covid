@@ -284,6 +284,7 @@ dev.off()
 
 # supplement - time gaps between vaccine doses  ---------------------------
 vaccine_gaps <- time_data_lc_all %>%
+  dplyr::select(t, vaccines, sex) %>% 
   mutate(t_gap = t * (365.25/52)) %>%
   filter(sex %in% c("male", "female"), vaccines != "0")
 
