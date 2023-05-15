@@ -25,7 +25,7 @@ if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
   glimpse(filter(adjusted_rates_out, std_error > 1))
   print("removing this from the plots")
   adjusted_rates_out <- adjusted_rates_out %>% 
-    filter(std_error<1)
+    filter(is.na(std_error) | std_error<1)
 }
 
 outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
@@ -43,6 +43,8 @@ full_rates <- adjusted_rates_out %>%
   # get rid of the variable names as part of the term2 label
   mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_detail")) %>% 
   mutate_at(c("term2"), ~ifelse(str_detect(term2, "baseline"), paste0(".", term2), .)) %>% 
+  mutate(term2 = str_replace_all(term2, "\\(", " \\(")) %>% 
+  mutate(term2 = str_replace_all(term2, "  \\(", " \\(")) %>% 
   # change ordering of outcome variable 
   mutate(outcome = factor(outcome, levels = c("All Long COVID", "Long COVID diagnoses", "Fractures"))) %>% 
   # change ordering of stratification variables
@@ -66,7 +68,7 @@ suppress_labs <- function(string) {
   rep("", length(string))
 }
 
-create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(6, 4)) {
+create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(7, 3), legend_position = "right") {
   if (y_col_var == "outcome"){
     outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
     cols <- hcl.colors(20, palette = "Viridis")[c(1,10,18)]
@@ -86,7 +88,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(6, 4)) {
   
   rr_tab <- data_for_table %>%
     ggplot(aes(stat, term2, label = value)) +
-    geom_text(size = 4, hjust = 1) +
+    geom_text(size = 5, hjust = 1) +
     scale_x_discrete(position = "bottom", labels = c("RR", "95% CI")) +
     facet_grid(
       strat_var + term2 ~ get(y_col_var),
@@ -98,7 +100,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(6, 4)) {
     theme_classic() +
     theme(
       strip.background = element_blank(),
-      strip.text.y.left = element_text(angle = 0, hjust = 0, vjust = 0.5, face = "bold"),
+      strip.text.y.left = element_text(size = 14, angle = 0, hjust = 0, vjust = 0.5, face = "bold"),
       strip.text.x = element_text(face = "bold"),
       panel.grid.major = element_blank(),
       panel.border = element_blank(),
@@ -128,8 +130,9 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(6, 4)) {
     #  cex = 1
     #) +
     geom_pointrange(position = pd) +
-    xlab("") +
-    ylab("Rate ratio (95% Confidence Interval)") +
+    labs(x = "", 
+         y = "Rate ratio (95% Confidence Interval)",
+         colour = "") +
     facet_grid(
       strat_var + term2 ~ " ",
       scales = "free",
@@ -138,8 +141,8 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(6, 4)) {
                           term2 = suppress_labs)
     ) +
     scale_color_manual(values = cols) +
-    scale_y_log10(breaks = c(0.25, 0.5, 1.0, 2.0, 4.0),
-                  limits = c(1/4.5, 4.5),
+    scale_y_log10(breaks = c(0.2, 0.33, 0.5, 1.0, 2.0, 3.0, 5),
+                  limits = c(0.2, 5),
                   minor_breaks = NULL) +
     theme_classic() +
     theme(
@@ -148,7 +151,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(6, 4)) {
       strip.text.x = element_text(face = "bold", size = 12),
       #strip.text.y = element_blank(),
       panel.border = element_rect(fill = NA, color = "black"),
-      legend.position = "none",
+      legend.position = legend_position,
       axis.text.x = element_text(face = "bold"),
       axis.text.y = element_blank(),
       axis.title = element_text(size = 10, face = "bold"),
@@ -180,23 +183,25 @@ dev.off()
 
 # All Long COVID only: adjusted versus crude
 pdf(here("output/figures/fig3d_longcovid_models.pdf"), width = 20, height = 20)
-  create_forest_plot(filter(full_rates, outcome == "All Long COVID"), y_col_var = "model")
+  create_forest_plot(filter(full_rates, outcome == "All Long COVID" & model == "crude"), 
+                     legend_position = "none", 
+                     y_col_var = "model")
 dev.off()
 
 # Focus on vaccines
-pdf(here("output/figures/fig3e_vaccines.pdf"), width = 16, height = 8)
+pdf(here("output/figures/fig3e_vaccines.pdf"), width = 20, height = 8)
   create_forest_plot(filter(full_rates, str_detect(strat_var, "accine") & model == "adjusted"), y_col_var = "outcome",
-                     plot_rel_widths = c(7.5, 3.5))
+                     plot_rel_widths = c(7, 3))
 dev.off()
 
 # vaccines and long covid focuse
-pdf(here("output/figures/fig3f_longcovid_vaccine_models.pdf"), width = 16, height = 8)
+pdf(here("output/figures/fig3f_longcovid_vaccine_models.pdf"), width = 20, height = 8)
   create_forest_plot(filter(full_rates, str_detect(outcome, "Long") & str_detect(strat_var, "accine") & model == "adjusted"), y_col_var = "outcome",
                      plot_rel_widths = c(7, 3))
 dev.off()
 
 # non Vaccine stratifiers
-pdf(here("output/figures/fig3g_demographics.pdf"), width = 16, height = 12)
+pdf(here("output/figures/fig3g_demographics.pdf"), width = 20, height = 12)
   create_forest_plot(filter(full_rates, !str_detect(strat_var, "accine") & model == "crude"), y_col_var = "outcome",
                    plot_rel_widths = c(7, 3))
 dev.off()
