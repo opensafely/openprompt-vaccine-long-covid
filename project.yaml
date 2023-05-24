@@ -196,4 +196,4 @@ actions:
         fig3g: output/figures/fig3g_demographics.pdf
         poissonplots_all: output/figures/fig3h_rate_ratios_facet.pdf
         poissonplots_table: output/tables/tab4_poisson_rateratios.csv
-        
+

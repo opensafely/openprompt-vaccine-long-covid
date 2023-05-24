@@ -5,6 +5,8 @@ library(arrow)
 library(here)
 
 source(here::here("analysis/functions/redaction.R"))
+output_dir_tab <- here("output/tables")
+fs::dir_create(output_dir_tab)
 
 redact_threshold = 7
 

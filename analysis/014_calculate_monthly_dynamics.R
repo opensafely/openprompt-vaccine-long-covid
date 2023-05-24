@@ -9,6 +9,7 @@ source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
 
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
+dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 
 # import data ------------------------------------------------------------

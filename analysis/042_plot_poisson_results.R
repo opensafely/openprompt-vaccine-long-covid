@@ -13,6 +13,7 @@ adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") %>%
     read_csv("output/tab023_poissonrates_static.csv")
   )
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
+dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 
 if(max(adjusted_rates_out$conf.high, na.rm = T) > 2e200){
   print("max confidence limit is strangely high for:")
@@ -262,4 +263,4 @@ output_poisson_rates <- full_rates %>%
 
 ## output the neat csv
 output_poisson_rates %>% 
-  write_csv(here("output/tables/tab4_poisson_rateratios.csv"))
+  write_csv(here::here("output/tables/tab4_poisson_rateratios.csv"))
