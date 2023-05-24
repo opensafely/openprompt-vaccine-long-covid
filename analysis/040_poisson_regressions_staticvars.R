@@ -10,8 +10,26 @@ source(here::here("analysis/functions/poisson_regressions.R"))
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 
 # add poisson regression results -----------------------------------
-stratifiers <- c("sex","age_cat", "practice_nuts", "ethnicity", "comorbidities", "highrisk_shield")
-strat_plot_names <- c("Sex","Age category", "Region", "Ethnicity", "Comorbidities", "Shielding (high risk group)")
+stratifiers <-
+  c(
+    "sex",
+    "age_cat",
+    "practice_nuts",
+    "ethnicity",
+    "imd_q5",
+    "comorbidities",
+    "highrisk_shield"
+  )
+strat_plot_names <-
+  c(
+    "Sex",
+    "Age category",
+    "Region",
+    "Ethnicity",
+    "IMD (quintile)",
+    "Comorbidities",
+    "Shielding (high risk group)"
+  )
   cleaned_data$out <- as.numeric(!is.na(cleaned_data$first_lc))
 adjusted_rates_c_lc_all <- map(stratifiers, ~poisson_regressions(cohort_data = cleaned_data, .x))
   cleaned_data$out <- as.numeric(!is.na(cleaned_data$first_lc_dx))
