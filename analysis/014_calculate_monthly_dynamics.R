@@ -60,4 +60,37 @@ for (col in cols_to_process) {
   dt_monthly[, paste0("cum_inc_", col) := cumsum(get(paste0("inc_", col)))]
 }
 
+
 readr::write_csv(dt_monthly, here::here("output/data_monthly_dynamics.csv"))
+
+
+# redact output table for summary -----------------------------------------
+redact_threshold <- 7
+
+redacted_monthly <- dt_monthly %>% 
+  mutate(
+    n_eligible_pt = redact_and_round(n_eligible_pt, redact_threshold),
+    n_first_lc = redact_and_round(n_first_lc, redact_threshold),
+    n_first_lc_dx = redact_and_round(n_first_lc_dx, redact_threshold),
+    n_hospitalised = redact_and_round(n_hospitalised, redact_threshold),
+    inc_first_lc = (n_first_lc/n_eligible_pt)*100,
+    inc_first_lc_dx = (n_first_lc_dx/n_eligible_pt)*100,
+    inc_hospitalised = (n_hospitalised/n_eligible_pt)*100
+  ) %>%
+  mutate_if(is.numeric, ~as.character(prettyNum(formatC(., digits = 1, format = "f"), 
+                                                big.mark = ",", preserve.width = "none",
+                                                drop0trailing = TRUE))) %>% 
+  dplyr::select(month_start_date, 
+                n_eligible_pt,
+                n_first_lc, 
+                inc_first_lc, 
+                n_first_lc_dx, 
+                inc_first_lc_dx,
+                n_hospitalised,
+                inc_hospitalised
+  )
+
+## output nice .csv table
+redacted_monthly %>% 
+  write_csv(here("output/tables/supptab01_monthly_dynamics.csv"))
+redacted_monthly
