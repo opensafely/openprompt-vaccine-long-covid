@@ -6,6 +6,7 @@ library(gtsummary)
 library(lubridate)
 
 source(here::here("analysis/functions/ggplot_theme.R"))
+source(here::here("analysis/functions/redaction.R"))
 
 #dir.create(here::here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 
@@ -24,7 +25,7 @@ roundmid_any <- function(x, to=1){
 }
 
 # will update this when releasing outputs
-threshold <- 1
+threshold <- 7
 
 # import data -------------------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
@@ -58,14 +59,14 @@ var_labels <- list(
   sex ~ "Sex",
   t ~ "Follow-up time (years)",
   age ~ "Age",
-  age_cat ~ "Age (categorised)",
+  age_cat ~ "Age category",
   ethnicity ~ "Ethnicity",
-  practice_nuts ~ "NHS region",
-  imd_q5 ~ "Index of multiple deprivation (quintile)",
+  practice_nuts ~ "Region",
+  imd_q5 ~ "IMD (quintile)",
   comorbidities ~ "Comorbidities",
   care_home ~ "Resident in care home",
-  highrisk_shield ~ "High risk shielding category",
-  lowrisk_shield ~ "Low/moderate risk shielding category"
+  highrisk_shield ~ "Shielding (high risk group)",
+  lowrisk_shield ~ " Shielding (Low/moderate risk group)"
 )
 
 var_labels_full <- splice(
@@ -92,7 +93,7 @@ table1 <- baseline_data %>%
   tbl_summary(
     label = unname(var_labels[names(.)]),
     statistic = list(
-      all_continuous() ~ "{p50} ({p25}-{p75})",
+      all_continuous() ~ "{mean} ({p25}-{p75})",
       all_categorical() ~ "{n} ({p}%)"
     ),
     digits = all_continuous() ~ 1
@@ -109,160 +110,59 @@ raw_stats <- table1$meta_data %>%
   select(var_label, df_stats) %>%
   unnest(df_stats)
 
-raw_stats_redacted <- raw_stats %>%
+raw_stats_redacted_catgorical <- raw_stats %>%
+  filter(!is.na(n)) %>% 
   mutate(
-    n=roundmid_any(n, threshold),
-    N=roundmid_any(N, threshold),
+    n=redact_and_round(n, threshold),
+    N=redact_and_round(N, threshold),
     p=round(100*n/N,1),
-    N_miss = roundmid_any(N_miss, threshold),
-    N_obs = roundmid_any(N_obs, threshold),
+    N_miss = redact_and_round(N_miss, threshold),
+    N_obs = redact_and_round(N_obs, threshold),
     p_miss = round(100*N_miss/N_obs,1),
-    N_nonmiss = roundmid_any(N_nonmiss, threshold),
+    N_nonmiss = redact_and_round(N_nonmiss, threshold),
     p_nonmiss = round(100*N_nonmiss/N_obs,1),
     var_label = factor(var_label, levels=map_chr(var_labels[-c(1)], ~last(as.character(.)))),
     variable_levels = replace_na(as.character(variable_levels), "")
-  )
-write_csv(raw_stats_redacted, here::here("output/table1_data.csv"))
-
-table1_data <- raw_stats_redacted %>%
-  rowwise() %>%
-  transmute(
-    var_label,
-    # gt creates a column called `label` when run locally, `variable_labels` 
-    # when run in opensafely (probs different versions)
-    # label,
-    variable_levels,
-    value = glue(stat_display)
-  ) 
-
-table1_review <- table1_data %>%
-  knitr::kable(format = "html") %>%
-  kableExtra::kable_paper() %>%
-  kableExtra::kable_styling(
-    full_width = FALSE
-  )
-
-# table to help reviewing
-kableExtra::save_kable(table1_review, file = fs::path(output_dir_tab, glue("tab1_baseline_description_redacted.html")))
-
-# make table 2 - description of outcomes by vaccines -----------------------
-fup_table <- cleaned_data %>%
-  # select only baseline variables 
-  dplyr::select(no_prev_vacc, 
-                pt_start_date, 
-                pt_end_date,
-                t,
-                lc_out,
-                lc_dx_only,
-                lc_cat,
-                fracture,
-                vaccine_schedule_detail,
-                covid_hosp_cat, 
-                covid_primary_cat, 
-                test_positive_cat,
-                test_total_cat,
-                sex,
-                age,
-                age_cat,
-                practice_nuts, 
-                imd_q5,
-                ethnicity,
-                comorbidities, 
-                care_home, 
-                highrisk_shield, 
-                lowrisk_shield) %>% 
-  # calculate year of study enrolment
-  dplyr::mutate(pt_start_year = factor(year(pt_start_date))) %>% 
-  dplyr::select(-pt_start_date,
-                -pt_end_date) %>% 
-  dplyr::select(pt_start_year, everything())
-
-table2 <- fup_table %>% 
-  dplyr::select(no_prev_vacc, any_of(names(var_labels_full))) %>% 
-  tbl_summary(
-    by = no_prev_vacc,
-    label = unname(var_labels_full[-1]),
-    statistic = list(
-      all_continuous() ~ "{p50} ({p25}-{p75})",
-      all_categorical() ~ "{n} ({p}%)"
-    ),
-    digits = all_continuous() ~ 1
-  ) %>%
-  bold_labels() %>%
-  add_overall()
-
-table2 %>%
-  as_gt() %>%
-  gt::gtsave(
-    filename = "tab2_full_description.html",
-    path = fs::path(output_dir_tab)
-  )
-
-raw_stats <- table2$meta_data %>%
-  select(var_label, df_stats) %>%
-  unnest(df_stats)
-
-raw_stats_redacted <- raw_stats %>%
-  mutate(
-    n=roundmid_any(n, threshold),
-    N=roundmid_any(N, threshold),
-    p=round(100*n/N,1),
-    N_miss = roundmid_any(N_miss, threshold),
-    N_obs = roundmid_any(N_obs, threshold),
-    p_miss = round(100*N_miss/N_obs,1),
-    N_nonmiss = roundmid_any(N_nonmiss, threshold),
-    p_nonmiss = round(100*N_nonmiss/N_obs,1),
-    var_label = factor(var_label, levels=map_chr(var_labels_full[-c(1)], ~last(as.character(.)))),
-    variable_levels = replace_na(as.character(variable_levels), ""),
-    by = replace_na(as.character(by), "Overall")
-  )
-write_csv(raw_stats_redacted, here::here("output/table2_data.csv"))
-
-table2_data <- raw_stats_redacted %>%
-  rowwise() %>%
-  transmute(
-    var_label,
-    # gt creates a column called `label` when run locally, `variable_labels` 
-    # when run in opensafely (probs different versions)
-    # label,
-    variable_levels,
-    by,
-    value = glue(stat_display)
   ) %>% 
-  pivot_wider(
-    names_from = by,
-    values_from = value
-  )
+  mutate(prettyN = as.character(prettyNum(formatC(n, digits = 1, format = "f"), 
+                                          big.mark = ",", preserve.width = "none",
+                                          drop0trailing = TRUE)),
+         stat = paste0(prettyN, " (",p,"%)")) %>% 
+  dplyr::select(variable = var_label, 
+                level = variable_levels, 
+                stat) 
 
-table2_review <- table2_data %>%
-  knitr::kable(format = "html") %>%
-  kableExtra::kable_paper() %>%
-  kableExtra::kable_styling(
-    full_width = FALSE
-  )
+raw_stats_redacted_numeric <- raw_stats %>% 
+  filter(is.na(n)) %>% 
+  mutate_if(is.numeric, ~prettyNum(formatC(., digits = 1, format = "f"), 
+                                   big.mark = ",", preserve.width = "none",
+                                   drop0trailing = TRUE)) %>% 
+  mutate(stat = paste0(mean, " (", p25, "-", p75,")")) %>% 
+  dplyr::select(variable = var_label, 
+                level = variable_levels, 
+                stat) 
 
-# table to help reviewing
-kableExtra::save_kable(table2_review, file = fs::path(output_dir_tab, glue("tab2_full_descripion_redacted.html")))
 
+raw_stats_output <- raw_stats_redacted_catgorical %>% 
+  bind_rows(raw_stats_redacted_numeric) %>% 
+  mutate(variable = factor(variable,
+                           levels = c(
+                             "Follow-up start (year)",
+                             "Follow-up time (years)",
+                             "Age",
+                             "Age category",
+                             "Sex",
+                             "Region",
+                             "IMD (quintile)",
+                             "Ethnicity",
+                             "Comorbidities",
+                             "Resident in care home",
+                             "Shielding (high risk group)",
+                             "Shielding (Low/moderate risk group)"
+                           ))) %>%
+    arrange(variable, level)
 
-# density plot of start and end date? -------------------------------------
-cols <- hcl.colors(2, palette = "viridis")
-colsmap <- c("Start date"=cols[1],
-             "End date"=cols[2])
-
-pdf(here("output/supplementary/histogram_start_end_dates.pdf"), width = 6, height = 4)
-cleaned_data %>% 
-  dplyr::select(pt_start_date, pt_end_date) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pt_start_date, col = "Start date", fill = "Start date"), alpha = 0.4, bins = 50) +
-  geom_histogram(aes(x = pt_end_date, col = "End date", fill = "End date"), alpha = 0.4, bins = 50) +
-  scale_color_manual("Follow up", values = colsmap) +
-  scale_fill_manual("Follow up", values = colsmap) +
-  scale_x_date(limits = c(as.Date("2020-10-01"), as.Date("2023-04-30")), date_breaks = "1 year", date_labels = "%Y") + 
-  labs(x = "Date", y = "Count") +
-  theme_ali()
-dev.off()
-
+write_csv(raw_stats_output, here::here("output/table1_data.csv"))
 
 # vaccine-to-long COVID gaps by dose number --------------------------------
 vaccine_gaps_tab <- cleaned_data %>%
