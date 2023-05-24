@@ -89,11 +89,6 @@ actions:
       moderately_sensitive: 
         table1: output/tables/tab1_baseline_description.html
         table1_csv: output/table1_data.csv
-        table1_red: output/tables/tab1_baseline_description_redacted.html
-        table2: output/tables/tab2_full_description.html
-        table2_csv: output/table2_data.csv
-        table2_red: output/tables/tab2_full_descripion_redacted.html
-        start_end_hist: output/supplementary/histogram_start_end_dates.pdf
         vaccine_lc_gap: output/supplementary/fig_vaccines_longcovid_gap.pdf
         vaccine_lc_gap_csv: output/supplementary/vaccines_longcovid_gap.csv
 
@@ -105,6 +100,7 @@ actions:
     outputs: 
       moderately_sensitive: 
         monthly_dynamics: output/data_monthly_dynamics.csv
+        table_monthly_dynamics: output/tables/supptab01_monthly_dynamics.csv
 
   crude_rates:
     run: >
@@ -124,7 +120,16 @@ actions:
       moderately_sensitive:
         t_cruderates_lc_all: output/tab022_tuv_rates_lc_all.csv
         t_cruderates_lc_dx: output/tab023_tuv_rates_lc_dx.csv
-
+  
+  output_crude_rates:
+    run: >
+      r:latest
+        analysis/022_combine_cruderates.R
+    needs: [crude_rates, crude_rates_timeupdated]
+    outputs:
+      moderately_sensitive:
+        cruderates_redacted: output/tables/tab3_crude_rates_redacted.csv
+  
   plot_incidence:
     run: >
       r:latest
@@ -190,4 +195,5 @@ actions:
         fig3f: output/figures/fig3f_longcovid_vaccine_models.pdf
         fig3g: output/figures/fig3g_demographics.pdf
         poissonplots_all: output/figures/fig3h_rate_ratios_facet.pdf
-      
+        poissonplots_table: output/tables/tab4_poisson_rateratios.csv
+        
