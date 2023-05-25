@@ -88,9 +88,13 @@ actions:
     outputs: 
       moderately_sensitive: 
         table1: output/tables/tab1_baseline_description.html
-        table1_csv: output/table1_data.csv
+        table1_csv: output/tab1_baseline_data.csv
+        table2: output/tables/tab2_fup_description.html
+        table2_csv: output/tab2_fup_data.csv
         vaccine_lc_gap: output/supplementary/fig_vaccines_longcovid_gap.pdf
+        vaccine_lc_gap_detail: output/supplementary/fig_vaccines_longcovid_gap_zoomed.pdf
         vaccine_lc_gap_csv: output/supplementary/vaccines_longcovid_gap.csv
+        
 
   calculate_monthly_dynamics: 
     run: > 
@@ -129,6 +133,7 @@ actions:
     outputs:
       moderately_sensitive:
         cruderates_redacted: output/tables/tab3_crude_rates_redacted.csv
+        cruderates_plot: output/figures/fig3_crude_rates.pdf
   
   plot_incidence:
     run: >
