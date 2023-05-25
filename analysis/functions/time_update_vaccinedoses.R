@@ -19,7 +19,8 @@ time_update_vaccinedoses <- function(data, outcome_var){
                   {{outcome_var}}, 
                   contains("vaccine_dose"),
                   contains("vaccine_schedule"),
-                  first_mrna_vaccine_date) %>% 
+                  first_mrna_vaccine_date,
+                  first_non_mrna_vaccine_date) %>% 
     rename(outcome = {{outcome_var}}) %>% 
     mutate(outcome_binary = as.numeric(!is.na(outcome)))
   
@@ -77,11 +78,10 @@ time_update_vaccinedoses <- function(data, outcome_var){
   
   ## repeat that process for mrna 
   df_vacc_base_mrna <- small_base %>%
-    # again, need to filter out anyone who has the event before/on the same day as study entry (should be redundant but just in case)
     filter(t>0) %>% 
-    select(patient_id, pt_start_date, vaccine_dose_1_date, first_mrna_vaccine_date) %>% 
+    select(patient_id, pt_start_date, first_non_mrna_vaccine_date, first_mrna_vaccine_date) %>% 
     mutate(
-      vacc_time_non_mRNA = pt_start_date %--% vaccine_dose_1_date / dyears(1),
+      vacc_time_non_mRNA = pt_start_date %--% first_non_mrna_vaccine_date / dyears(1),
       vacc_time_mRNA = pt_start_date %--% first_mrna_vaccine_date / dyears(1)
       ) %>% 
     dplyr::select(-contains("vaccine_dose")) %>% 
@@ -98,11 +98,7 @@ time_update_vaccinedoses <- function(data, outcome_var){
     #dplyr::select(-contains("vaccine_dose")) %>% 
     pivot_longer(cols = starts_with("vacc_time_"), names_to = "vacc_no", values_to = "years")
   
-  df_vacc_base_primarydose$primary_course = ifelse(is.na(df_vacc_base_primarydose$vaccine_dose_1_manufacturer) &
-      !is.na(df_vacc_base_primarydose$vaccine_dose_1_date),
-    "Other",
-    df_vacc_base_primarydose$vaccine_dose_1_manufacturer
-  )
+  df_vacc_base_primarydose$primary_course = df_vacc_base_primarydose$vaccine_dose_1_manufacturer
   
   # create the survival dataset 
   survivaldata <- survival::tmerge(small_base, small_base, id = patient_id, out = event(t, outcome_binary)) 
@@ -128,7 +124,7 @@ time_update_vaccinedoses <- function(data, outcome_var){
                                     levels(vaccines_schedule_timeupdate$vaccine_schedule_detail)
                                   ))) %>%
     mutate(t_vacc_primary = factor(t_vacc_primary,
-                                  levels = c("No vaccine", "AstraZeneca", "Pfizer"))) %>%
+                                  levels = c("No vaccine", "AstraZeneca", "Pfizer", "Other"))) %>%
     mutate(t_vacc_mrna = factor(t_vacc_mrna,
                                   levels = c("No vaccine", "non_mRNA", "mRNA"))) %>%
     mutate(t = tstop - tstart)
