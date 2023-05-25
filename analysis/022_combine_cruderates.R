@@ -102,4 +102,69 @@ redacted_crude_rates <- tidy_crude_rates %>%
 redacted_crude_rates %>% 
   write_csv(here("output/tables/tab3_crude_rates_redacted.csv"))
 
-  
+
+# make a nice plot of the crude rates  ------------------------------------
+plot_crude_rates <- tidy_crude_rates %>% 
+  dplyr::select(stratifier,
+                level, 
+                n, 
+                fup,
+                lc_all = lc, 
+                lc_dx,
+                rateper1e5_all = rate_per1e5,
+                rateper1e5_dx = rate_per1e5_dx,
+                lci_all = lci,
+                uci_all = uci,
+                lci_dx,
+                uci_dx
+                ) %>% 
+  pivot_longer(cols = c(lc_all, lc_dx, rateper1e5_all, rateper1e5_dx, lci_all, uci_all, lci_dx, uci_dx), 
+               names_to = c(".value", "outcome"), names_pattern = "(.*)_(.*)") %>% 
+  mutate(outcome = factor(outcome, levels = c("all", "dx"), labels = c("All Long COVID", "Long COVID diagnoses")))
+
+outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
+cols <- hcl.colors(20, palette = "Viridis")[c(1,10,18)]
+names(cols) <- outcome_list
+
+
+pdf(here("output/figures/fig3_crude_rates.pdf"), width = 8, height = 8, onefile=FALSE)
+ggplot(data = plot_crude_rates,
+                    aes(
+                      x = level,
+                      y = rateper1e5,
+                      ymin = lci,
+                      ymax = uci,
+                      colour = outcome)) +
+  #geom_hline(yintercept = 1, colour = "gray60") +
+  geom_pointrange(pch = 1, position = position_dodge(width = 0.5)) + 
+  labs(x = "", 
+       y = "Crude rate per 100,000 person-years (95% CI)",
+       colour = "") +
+  facet_grid(
+    stratifier ~ " ",
+    scales = "free",
+    space = "free",
+    switch = "y"
+  ) +
+  scale_color_manual(values = cols) +
+  theme_classic() +
+  theme(
+    panel.background = element_blank(),
+    strip.background = element_rect(colour = NA, fill = NA),
+    strip.text.y.left = element_text(size = 12, angle = 0, hjust = 0, vjust = 1, face = "bold"),
+    strip.text.x = element_text(face = "bold"),
+    strip.placement = "outside",
+    panel.border = element_rect(fill = NA, color = "black"),
+    legend.position = "top",
+    panel.grid.major.x = element_line(colour = "gray80"),
+    panel.grid.minor.x = element_line(colour = "gray90"),
+    axis.text.x = element_text(face = "bold"),
+    axis.title = element_text(size = 10, face = "bold"),
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5,
+      size = 13
+    )
+  ) +
+  coord_flip()
+dev.off()
