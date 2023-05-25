@@ -78,7 +78,7 @@ redacted_monthly <- dt_monthly %>%
     inc_first_lc_dx = (n_first_lc_dx/n_eligible_pt)*100,
     inc_hospitalised = (n_hospitalised/n_eligible_pt)*100
   ) %>%
-  mutate_if(is.numeric, ~as.character(prettyNum(formatC(., digits = 1, format = "f"), 
+  mutate_if(is.numeric, ~as.character(prettyNum(formatC(., digits = 3, format = "f"), 
                                                 big.mark = ",", preserve.width = "none",
                                                 drop0trailing = TRUE))) %>% 
   dplyr::select(month_start_date, 
