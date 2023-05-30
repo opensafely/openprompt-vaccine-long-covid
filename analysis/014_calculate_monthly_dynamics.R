@@ -49,9 +49,10 @@ dt_monthly[, n_first_lc_dx := mapply(count_date_events, month = month_start_date
 dt_monthly[, n_hospitalised := mapply(count_date_events, month = month_start_date, date_var = "first_covid_hosp")]
 dt_monthly[, n_tested := mapply(count_date_events, month = month_start_date, date_var = "latest_test_before_diagnosis")]
 dt_monthly[, n_vacc := mapply(count_date_events, month = month_start_date, date_var = "vaccine_dose_1_date")]
+dt_monthly[, n_lc_hosp := mapply(count_date_events, month = month_start_date, date_var = "lc_hosp_date_u09")]
 
 # Calculate monthly incidence and cumulative monthly incidence
-cols_to_process <- c("first_lc", "first_lc_dx", "hospitalised", "tested", "vacc")
+cols_to_process <- c("first_lc", "first_lc_dx", "hospitalised", "tested", "vacc", "lc_hosp")
 
 for (col in cols_to_process) {
   # Calculate monthly incidence
@@ -74,9 +75,11 @@ redacted_monthly <- dt_monthly %>%
     n_first_lc = redact_and_round(n_first_lc, redact_threshold),
     n_first_lc_dx = redact_and_round(n_first_lc_dx, redact_threshold),
     n_hospitalised = redact_and_round(n_hospitalised, redact_threshold),
+    n_lc_hosp = redact_and_round(n_lc_hosp, redact_threshold),
     inc_first_lc = (n_first_lc/n_eligible_pt)*100,
     inc_first_lc_dx = (n_first_lc_dx/n_eligible_pt)*100,
-    inc_hospitalised = (n_hospitalised/n_eligible_pt)*100
+    inc_hospitalised = (n_hospitalised/n_eligible_pt)*100,
+    inc_lc_hosp = (n_lc_hosp/n_eligible_pt)*100
   ) %>%
   mutate_if(is.numeric, ~as.character(prettyNum(formatC(., digits = 3, format = "f"), 
                                                 big.mark = ",", preserve.width = "none",
@@ -88,10 +91,11 @@ redacted_monthly <- dt_monthly %>%
                 n_first_lc_dx, 
                 inc_first_lc_dx,
                 n_hospitalised,
-                inc_hospitalised
+                inc_hospitalised,
+                n_lc_hosp,
+                inc_lc_hosp
   )
 
 ## output nice .csv table
 redacted_monthly %>% 
   write_csv(here("output/tables/supptab01_monthly_dynamics.csv"))
-redacted_monthly

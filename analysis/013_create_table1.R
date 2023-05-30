@@ -69,6 +69,7 @@ var_labels_full <- splice(
   lc_out ~ "Any Long COVID record", 
   lc_dx_only ~ "Long COVID diagnosis",
   lc_cat ~ "Long COVID record by prior status",
+  lc_hosp ~ "Long COVID record in hospital admission", 
   fracture ~ "Hospital record of fracture", 
   covid_hosp_cat ~ "COVID-19 hospitalisations (n)",
   covid_primary_cat ~ "COVID-19 primary care record (n)", 
@@ -179,6 +180,7 @@ fup_table <- cleaned_data %>%
                 lc_out,
                 lc_dx_only,
                 lc_cat,
+                lc_hosp,
                 fracture,
                 vaccine_dose_1_manufacturer,
                 covid_hosp_cat, 
@@ -237,3 +239,5 @@ vaccine_gaps_data %>%
   labs(fill = "Number of vaccine doses", x = "Gap between vaccine and long COVID record (months)") +
   theme_ali()
 dev.off()
+
+
