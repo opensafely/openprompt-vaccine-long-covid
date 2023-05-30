@@ -1,7 +1,7 @@
 from databuilder.ehrql import Dataset, case, when, days
 import codelists
 
-from variable_lib import long_covid_events_during, long_covid_dx_during
+from variable_lib import long_covid_events_during, long_covid_dx_during, long_covid_inhosp
 from datasets import (
     add_common_variables,
     study_start_date,
@@ -13,6 +13,7 @@ dataset = Dataset()
 
 lc_code_any = long_covid_events_during(study_start_date, study_end_date)
 lc_dx_code = long_covid_dx_during(study_start_date, study_end_date)
+lc_hosp = long_covid_inhosp(study_start_date, study_end_date)
 
 # long covid code
 first_lc_code_any = lc_code_any.sort_by(lc_code_any.date).first_for_patient()
@@ -48,6 +49,8 @@ dataset.first_lc = first_lc_code.best_date
 dataset.first_lc_code = first_lc_code.best_code
 dataset.test_to_lc_gap = (first_lc_code.best_date - dataset.latest_test_before_diagnosis).days
 dataset.vacc_to_lc_gap = (first_lc_code.best_date - dataset.date_last_vacc).days
+dataset.lc_hosp_date_b94 = lc_hosp.where(lc_hosp.all_diagnoses.contains("B94")).sort_by(lc_hosp.admission_date).first_for_patient().admission_date
+dataset.lc_hosp_date_u09 = lc_hosp.where(lc_hosp.all_diagnoses.contains("U09")).sort_by(lc_hosp.admission_date).first_for_patient().admission_date
 
 dataset.first_lc_dx = first_lc_dx_code.date
 dataset.lc_dx_flag = lc_dx_flag

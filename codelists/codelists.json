@@ -293,6 +293,12 @@
       "url": "https://codelists.opensafely.org/codelist/primis-covid19-vacc-uptake/shield/34f86122/",
       "downloaded_at": "2023-03-31 16:26:14.248903Z",
       "sha": "7edf08877d201478d4f794edb4d4dfe1353cb095"
+    },
+    "user-hendersonad-hes-long-covid.csv": {
+      "id": "user/hendersonad/hes-long-covid/7565af4d",
+      "url": "https://codelists.opensafely.org/codelist/user/hendersonad/hes-long-covid/7565af4d/",
+      "downloaded_at": "2023-05-26 15:03:57.748861Z",
+      "sha": "49812e5b946cd87c1a84a293e11a2f01a4d7a233"
     }
   }
 }

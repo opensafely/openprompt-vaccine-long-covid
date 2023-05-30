@@ -47,3 +47,4 @@ opensafely/fracture-potential-emergency-opcs-codes/6aac6aa1
 nhsd-primary-care-domain-refsets/carehome_cod/5d2f363a
 primis-covid19-vacc-uptake/nonshield/19362df7
 primis-covid19-vacc-uptake/shield/34f86122
+user/hendersonad/hes-long-covid/7565af4d
