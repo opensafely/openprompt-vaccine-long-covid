@@ -24,34 +24,14 @@ time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc
 time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_dx.gz.parquet")) %>%
   rename(lc_dx = out)
 
-#  suppress test, vaccination and hospitalisation data at the end of fup -----
-# We did not record hospitalisations or tests at the end of follow up \
-#  because there was not enough time for those infections to become   \
-#. recorded long covid cases. So the zeroes are misleading
-#. Need to replace the 0s in the last 3 months of data as NA
-
-df_rows <- nrow(dt_monthly)
-suppress3months <- (df_rows-2):df_rows
-
-dt_monthly$n_hospitalised[suppress3months] <- NA
-dt_monthly$n_tested[suppress3months] <- NA
-dt_monthly$n_vacc[suppress3months] <- NA
-
-dt_monthly$inc_hospitalised[suppress3months] <- NA
-dt_monthly$inc_tested[suppress3months] <- NA
-dt_monthly$inc_vacc[suppress3months] <- NA
-
-dt_monthly$cum_inc_hospitalised[suppress3months] <- NA
-dt_monthly$cum_inc_tested[suppress3months] <- NA
-dt_monthly$cum_inc_vacc[suppress3months] <- NA
-
 # define colours ----------------------------------------------------------
 cols <- c(
   "long COVID" = "red1",
   "long COVID Dx" = "dodgerblue1",
   "Hospitalised" = "orange",
   "Last test positive" = "black",
-  "1st vaccine dose" = "blueviolet")
+  "1st vaccine dose" = "blueviolet",
+  "long COVID hospital" = "forestgreen")
 
 lc_dx_cols <- c("coral", "aquamarine2")
 
@@ -84,7 +64,7 @@ timeseries_plot <- bind_rows(timeseries_lc_all,
 timeseries_lc_all <- NULL
 timeseries_lc_dx <- NULL
 
-timeseries_plot$redacted_out <- timeseries_plot$sum_out # redactor2(timeseries_plot$sum_out, threshold = 10)
+timeseries_plot$redacted_out <- redactor2(timeseries_plot$sum_out, threshold = 10)
 
 # for p2 need to agregate by sex to get a single panel plot
 p2_data <- timeseries_plot %>% 
@@ -166,8 +146,7 @@ p4a <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = (inc_first_lc*100), color = "long COVID"), lwd = 1) +
   geom_line(aes(y = (inc_first_lc_dx*100), color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = (inc_hospitalised*100), color = "Hospitalised"), lwd = 1) +
-  #geom_line(aes(y = (inc_tested*100), color = "Last test positive"), lwd = 1) +
-  #geom_line(aes(y = (inc_vacc*100), color = "1st vaccine dose"), lwd = 1) +
+  geom_line(aes(y = (inc_lc_hosp*100), color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "Incidence (%)", 
        colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
@@ -183,8 +162,7 @@ p4b <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = cum_inc_first_lc*100, color = "long COVID"), lwd = 1) +
   geom_line(aes(y = cum_inc_first_lc_dx*100, color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = cum_inc_hospitalised*100, color = "Hospitalised"), lwd = 1) +
-  #geom_line(aes(y = cum_inc_tested*100, color = "Last test positive"), lwd = 1) +
-  #geom_line(aes(y = cum_inc_vacc*100, color = "1st vaccine dose"), lwd = 1) +
+  geom_line(aes(y = cum_inc_lc_hosp*100, color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "Cumulative incidence (%)", colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
   theme_ali() + 
@@ -215,6 +193,7 @@ p4d <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = log2(inc_first_lc), color = "long COVID"), lwd = 1) +
   geom_line(aes(y = log2(inc_first_lc_dx), color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = log2(inc_tested), color = "Last test positive"), lwd = 1) +
+  geom_line(aes(y = log2(inc_lc_hosp), color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "log2(events)", colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
   theme_ali() + 
@@ -245,12 +224,16 @@ lines(dt_monthly$month_start_date,
       dt_monthly$cum_inc_first_lc_dx*100,
       type = "l",
       col = cols[2])
+lines(dt_monthly$month_start_date,
+      dt_monthly$cum_inc_lc_hosp*100,
+      type = "l",
+      col = cols[6])
 par(new=T)
 plot(plot_uk_gov_cases$date, plot_uk_gov_cases$roll_mean, type = "l", col = 1, lwd = 2,
      xaxt = "n", yaxt = "n", xlab = "", ylab = "")
 axis(side = 4)
 mtext("Positive cases in England (7-day average)", side = 4, padj = 4)
-legend("topleft", legend = c("long COVID", "long COVID Dx only", "Positive COVID-19 tests (Eng)"), lty = 1, col = c(cols[1:2], 1))
+legend("topleft", legend = c("long COVID", "long COVID Dx only", "long COVID in hospital", "Positive COVID-19 tests (Eng)"), lty = 1, col = c(cols[c(1:2, 6)], 1))
 dev.off()
 
 # stacked bar chart for proportion Rx vs Dx -------------------------------
