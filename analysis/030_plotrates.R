@@ -149,9 +149,12 @@ p4a <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = (inc_lc_hosp*100), color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "Incidence (%)", 
        colour = "COVID-19 outcome") +
+  guides(colour=guide_legend(nrow=2,byrow=TRUE)) +
   scale_color_manual(values = cols) +
   theme_ali() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        legend.box="vertical", 
+        legend.margin=margin())
 
 pdf(here("output/figures/fig4a_outbreak_dynamics.pdf"), width = 8, height = 6)
   p4a

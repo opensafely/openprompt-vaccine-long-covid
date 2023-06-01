@@ -166,6 +166,8 @@ actions:
         tests_density: output/supplementary/test_to_longcovid_density.pdf
         longcovid_flows: output/figures/fig5_longcovid_flows.pdf
         longcovid_flows_data: output/sankey_plot_data.csv
+        longcovid_codes: output/figures/fig6_longcovid_record_consistency.pdf
+        longcovid_codes_data: output/long_covid_sankey_plot_data.csv
 
   poisson_rates_static:
     run: >

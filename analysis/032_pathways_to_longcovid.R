@@ -136,3 +136,68 @@ ggplot(sankey_plotv2,
   theme_ali() + 
   theme(legend.position = "top")
 dev.off()
+
+
+
+# compare people with long COVID in primary care and HES ------------------
+long_covid_sankey <- cleaned_data %>% 
+  dplyr::select(
+    patient_id,
+    lc_out,
+    lc_dx_flag,
+    lc_hosp
+  ) %>% 
+  mutate(
+    lc_dx_flag = replace_na(as.character(lc_dx_flag), "None"),
+    # convert the factor variable for Long COVID in hospital into numeric (0: none, 1: U09, 2: B94)
+    lc_hosp_num = as.numeric(lc_hosp) - 1,
+    # get a variable if they have a long COVID code in primary (lc_out) or secondary (lc_hosp_num) care (as 0 or 1)
+    lc_any = as.numeric(lc_out + lc_hosp_num >= 1)
+  ) 
+
+lc_sankey_plot <- long_covid_sankey %>% 
+  group_by(lc_any, lc_dx_flag, lc_hosp) %>% 
+  summarise(freq = n(), .groups = "keep") %>% 
+  ungroup()
+is_alluvia_form(as.data.frame(lc_sankey_plot), axes = 1:4, silent = TRUE)
+
+# fake_data = data.frame(
+#   lc_any = 1,
+#   lc_dx_flag = "None", 
+#   lc_hosp = "ICD10 Long COVID U09", 
+#   freq = 100
+# )
+# lc_sankey_plot <- lc_sankey_plot %>% 
+#   bind_rows(
+#     fake_data
+#   )
+
+# reorder vars as factors
+lc_sankey_plot$lc_any <- factor(lc_sankey_plot$lc_any,
+                                levels = 0:1,
+                                labels = c("None", "Any long COVID record"))
+lc_sankey_plot$lc_dx_flag <- factor(lc_sankey_plot$lc_dx_flag, 
+                                 levels = c("None", "Dx", "Rx"))
+
+lc_sankey_plot$freq <- redactor2(lc_sankey_plot$freq, threshold = 1)
+
+readr::write_csv(lc_sankey_plot, here::here("output/long_covid_sankey_plot_data.csv"))
+
+lc_sankey_plot_filtered <- lc_sankey_plot %>% 
+  filter(lc_any != "None") %>% 
+  filter(!is.na(freq))
+
+pdf(here("output/figures/fig6_longcovid_record_consistency.pdf"), width = 7, height = 6)
+ggplot(lc_sankey_plot_filtered,
+       aes(y = freq, axis1 = lc_dx_flag, axis2 = lc_hosp)) +
+  geom_alluvium(aes(fill = lc_dx_flag), width = 1/6) +
+  geom_stratum(width = 1/6, fill = "gray70", color = "grey40") +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Long COVID @ GP", "Long COVID @ hospital"), expand = c(.05, .15)) +
+  scale_fill_manual(values = c("violet", lc_dx_cols)) +
+  labs(fill = "long COVID @ GP", 
+       y = "Frequency", 
+       x = "long COVID record") + 
+  theme_ali() + 
+  theme(legend.position = "top")
+dev.off()
