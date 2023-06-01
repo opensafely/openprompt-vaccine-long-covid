@@ -36,11 +36,19 @@ adjusted_rates_c_lc_all <- map(stratifiers, ~poisson_regressions(cohort_data = c
 adjusted_rates_c_lc_dx <- map(stratifiers, ~poisson_regressions(cohort_data = cleaned_data, .x))
   cleaned_data$out <- as.numeric(!is.na(cleaned_data$first_fracture_hosp))
 adjusted_rates_c_frac <- map(stratifiers, ~poisson_regressions(cohort_data = cleaned_data, .x))
+  cleaned_data$out <- as.numeric(!is.na(cleaned_data$first_covid_hosp))
+adjusted_rates_c_covidhosp <- map(stratifiers, ~poisson_regressions(cohort_data = cleaned_data, .x))
 
 adjusted_rates_out <- NULL
-adjusted_rates_c_list <- c("adjusted_rates_c_lc_all", "adjusted_rates_c_lc_dx", "adjusted_rates_c_frac")
-outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
-for(j in 1:3){
+adjusted_rates_c_list <- c("adjusted_rates_c_lc_all",
+                           "adjusted_rates_c_lc_dx",
+                           "adjusted_rates_c_frac",
+                           "adjusted_rates_c_covidhosp")
+outcome_list <- c("All Long COVID",
+                  "Long COVID diagnoses",
+                  "Fractures",
+                  "COVID-19 hospitalisation")
+for(j in 1:4){
   print(j)
   adjusted_rates_temp <- bind_rows(get(adjusted_rates_c_list[j]))
   outcome_name <- outcome_list[j]

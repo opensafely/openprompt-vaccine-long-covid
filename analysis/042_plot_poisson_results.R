@@ -30,8 +30,8 @@ if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
     filter(is.na(std_error) | std_error<1)
 }
 
-outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
-cols <- hcl.colors(20, palette = "Viridis")[c(1,10,18)]
+outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures", "COVID-19 hospitalisation")
+cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
 names(cols) <- outcome_list
 
 # plot rate ratios with table -----------------------------------------------------
@@ -48,7 +48,7 @@ full_rates <- adjusted_rates_out %>%
   mutate(term2 = str_replace_all(term2, "\\(", " \\(")) %>% 
   mutate(term2 = str_replace_all(term2, "  \\(", " \\(")) %>% 
   # change ordering of outcome variable 
-  mutate(outcome = factor(outcome, levels = c("All Long COVID", "Long COVID diagnoses", "Fractures"))) %>% 
+  mutate(outcome = factor(outcome, levels = c("All Long COVID", "Long COVID diagnoses", "Fractures", "COVID-19 hospitalisation"))) %>% 
   # change ordering of stratification variables
   mutate(strat_var = factor(
     strat_var,
@@ -74,8 +74,8 @@ suppress_labs <- function(string) {
 
 create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(7, 3), legend_position = "right") {
   if (y_col_var == "outcome"){
-    outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures")
-    cols <- hcl.colors(20, palette = "Viridis")[c(1,10,18)]
+    outcome_list <- c("All Long COVID", "Long COVID diagnoses", "Fractures", "COVID-19 hospitalisation")
+    cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
     names(cols) <- outcome_list
   } else {
     n_cols <- dplyr::select(data_in, {{y_col_var}}) %>% unique() %>% pull()
@@ -167,7 +167,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(7, 3), le
 
 # Crude RRs
 pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 20, height = 20, onefile=FALSE)
-  create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome")
+  create_forest_plot(data_in = filter(full_rates, model == "crude"), y_col_var = "outcome")
 dev.off()
 
 # Adjusted RRs
@@ -182,7 +182,7 @@ dev.off()
 
 # All Long COVID only: adjusted versus crude
 pdf(here("output/figures/fig3d_longcovid_models.pdf"), width = 20, height = 20, onefile=FALSE)
-  create_forest_plot(filter(full_rates, outcome == "All Long COVID" & model == "crude"), 
+  create_forest_plot(filter(full_rates, outcome == "All Long COVID"), 
                      legend_position = "none", 
                      y_col_var = "model")
 dev.off()
@@ -228,7 +228,8 @@ dev.off()
 
 # Make a nice table of the results ----------------------------------------
 output_poisson_rates <- full_rates %>% 
-  mutate(outcome = str_to_lower(str_replace_all(outcome, " ", "_"))) %>% 
+  # tidy up outcome names because they're about to become a variable name
+  mutate(outcome = str_to_lower(str_replace_all(outcome, " |-", "_"))) %>%
   dplyr::select(
     variable = strat_var, 
     level = term2, 
@@ -244,6 +245,8 @@ output_poisson_rates <- full_rates %>%
                 ci_all_long_covid,
                 rr_long_covid_diagnoses, 
                 ci_long_covid_diagnoses,
+                rr_covid_19_hospitalisation, 
+                ci_covid_19_hospitalisation,
                 rr_fractures, 
                 ci_fractures) %>% 
   mutate(variable = factor(variable,

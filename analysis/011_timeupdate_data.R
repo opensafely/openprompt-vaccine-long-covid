@@ -21,9 +21,16 @@ arrow::write_parquet(time_data_lc_dx,
                      sink = here::here("output/timeupdate_dataset_lc_dx.gz.parquet"),
                      compression = "gzip", compression_level = 5)
 
+# hospitalised for fracure
 time_data_fracture <- time_update_vaccinedoses(cleaned_data, first_fracture_hosp)
 arrow::write_parquet(time_data_fracture, 
                      sink = here::here("output/timeupdate_dataset_fracture.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+
+# hospitalised with COVID-19
+time_data_covidhosp <- time_update_vaccinedoses(cleaned_data, first_covid_hosp)
+arrow::write_parquet(time_data_covidhosp, 
+                     sink = here::here("output/timeupdate_dataset_covidhosp.gz.parquet"),
                      compression = "gzip", compression_level = 5)
 
 
