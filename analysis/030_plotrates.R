@@ -146,7 +146,6 @@ p4a <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = (inc_first_lc*100), color = "long COVID"), lwd = 1) +
   geom_line(aes(y = (inc_first_lc_dx*100), color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = (inc_hospitalised*100), color = "Hospitalised"), lwd = 1) +
-  geom_line(aes(y = (inc_lc_hosp*100), color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "Incidence (%)", 
        colour = "COVID-19 outcome") +
   guides(colour=guide_legend(nrow=2,byrow=TRUE)) +
@@ -165,7 +164,6 @@ p4b <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = cum_inc_first_lc*100, color = "long COVID"), lwd = 1) +
   geom_line(aes(y = cum_inc_first_lc_dx*100, color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = cum_inc_hospitalised*100, color = "Hospitalised"), lwd = 1) +
-  geom_line(aes(y = cum_inc_lc_hosp*100, color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "Cumulative incidence (%)", colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
   theme_ali() + 
@@ -196,7 +194,6 @@ p4d <- ggplot(dt_monthly, aes(x = month_start_date)) +
   geom_line(aes(y = log2(inc_first_lc), color = "long COVID"), lwd = 1) +
   geom_line(aes(y = log2(inc_first_lc_dx), color = "long COVID Dx"), lwd = 1) +
   geom_line(aes(y = log2(inc_tested), color = "Last test positive"), lwd = 1) +
-  geom_line(aes(y = log2(inc_lc_hosp), color = "long COVID hospital"), lwd = 1) +
   labs(x = "Month", y = "log2(events)", colour = "COVID-19 outcome") +
   scale_color_manual(values = cols) +
   theme_ali() + 
@@ -227,10 +224,6 @@ lines(dt_monthly$month_start_date,
       dt_monthly$cum_inc_first_lc_dx*100,
       type = "l",
       col = cols[2])
-lines(dt_monthly$month_start_date,
-      dt_monthly$cum_inc_lc_hosp*100,
-      type = "l",
-      col = cols[6])
 par(new=T)
 plot(plot_uk_gov_cases$date, plot_uk_gov_cases$roll_mean, type = "l", col = 1, lwd = 2,
      xaxt = "n", yaxt = "n", xlab = "", ylab = "")

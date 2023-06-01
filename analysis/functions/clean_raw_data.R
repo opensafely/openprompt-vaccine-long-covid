@@ -14,14 +14,6 @@ clean_raw_data <- function(data_in){
       lc_out = as.numeric(!is.na(first_lc)),
       lc_dx_only = as.numeric(!is.na(first_lc_dx)),
       fracture = as.numeric(!is.na(first_fracture_hosp)),
-      lc_hosp_u09 = !is.na(lc_hosp_date_u09),
-      lc_hosp_b94 = !is.na(lc_hosp_date_b94),
-      lc_hosp = factor(case_when(
-        lc_hosp_u09 ~ "ICD10 Long COVID U09",
-        lc_hosp_b94 ~ "ICD10 Long COVID B94",
-        !lc_hosp_u09 & !lc_hosp_b94 ~ "No long COVID (ICD10)"), 
-        levels = c("No long COVID (ICD10)", "ICD10 Long COVID U09", "ICD10 Long COVID B94")
-      ),
       # convert gap between most recent vaccine and LC record into years
       last_vacc_gap = last_vacc_gap / 365.25,
       # convert IMD to quintiles
@@ -136,7 +128,6 @@ clean_raw_data <- function(data_in){
                   starts_with("vaccine_dose_"), first_mrna_vaccine_date, first_non_mrna_vaccine_date, 
                   no_prev_vacc, date_last_vacc, last_vacc_gap,
                   first_lc, first_lc_code, first_lc_dx, lc_dx_flag, first_fracture_hosp,
-                  lc_hosp_date_b94, lc_hosp_date_u09, lc_hosp,
                   t, lc_out, lc_dx_only, lc_cat, fracture
     )
 }
