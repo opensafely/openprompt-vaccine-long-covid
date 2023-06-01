@@ -66,6 +66,7 @@ actions:
         timedata_longcovid: output/timeupdate_dataset_lc_all.gz.parquet
         timedata_longcovid_dx: output/timeupdate_dataset_lc_dx.gz.parquet
         timedata_fracture: output/timeupdate_dataset_fracture.gz.parquet
+        timedata_covidhosp: output/timeupdate_dataset_covidhosp.gz.parquet
       moderately_sensitive: 
         txt3: output/data_properties/timeupdated_dataset_skim.txt
 
