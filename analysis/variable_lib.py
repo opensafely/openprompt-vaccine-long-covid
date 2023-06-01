@@ -137,6 +137,7 @@ def long_covid_dx_during(start, end):
 
 
 def long_covid_inhosp(start, end):
-    return schema.hospital_admissions.where(schema.hospital_admissions.admission_date >= start) \
-      .where(schema.hospital_admissions.admission_date <= end) \
-      .where(schema.hospital_admissions.all_diagnoses.is_in(codelists.long_covid_hosp))
+    in_study_admissions = schema.hospital_admissions \
+      .where(schema.hospital_admissions.admission_date.is_between(start, end))
+
+    return hospitalisation_diagnosis_matches(admissions=in_study_admissions, codelist=codelists.long_covid_hosp)

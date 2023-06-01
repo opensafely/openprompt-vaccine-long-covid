@@ -49,6 +49,9 @@ dataset.first_lc = first_lc_code.best_date
 dataset.first_lc_code = first_lc_code.best_code
 dataset.test_to_lc_gap = (first_lc_code.best_date - dataset.latest_test_before_diagnosis).days
 dataset.vacc_to_lc_gap = (first_lc_code.best_date - dataset.date_last_vacc).days
+dataset.lc_hosp_date = lc_hosp.sort_by(lc_hosp.admission_date).first_for_patient().admission_date
+dataset.lc_hosp_any = lc_hosp.exists_for_patient()
+dataset.lc_hosp_count = lc_hosp.count_for_patient()
 dataset.lc_hosp_date_b94 = lc_hosp.where(lc_hosp.all_diagnoses.contains("B94")).sort_by(lc_hosp.admission_date).first_for_patient().admission_date
 dataset.lc_hosp_date_u09 = lc_hosp.where(lc_hosp.all_diagnoses.contains("U09")).sort_by(lc_hosp.admission_date).first_for_patient().admission_date
 
