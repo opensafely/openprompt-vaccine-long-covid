@@ -66,15 +66,23 @@ actions:
         timedata_longcovid: output/timeupdate_dataset_lc_all.gz.parquet
         timedata_longcovid_dx: output/timeupdate_dataset_lc_dx.gz.parquet
         timedata_fracture: output/timeupdate_dataset_fracture.gz.parquet
-        timedata_covidhosp: output/timeupdate_dataset_covidhosp.gz.parquet
       moderately_sensitive: 
         txt3: output/data_properties/timeupdated_dataset_skim.txt
+
+  time_update_covidhospitalisation: 
+    run: >
+      r:latest
+        analysis/011a_timeupdate_covidhospitalisation.R
+    needs: [clean_the_data]
+    outputs: 
+      highly_sensitive: 
+        timedata_covidhosp: output/timeupdate_dataset_covidhosp.gz.parquet
 
   summarise_timedata: 
     run: >
       r:latest
         analysis/012_timeupdated_summary.R
-    needs: [time_update_data]
+    needs: [time_update_data, time_update_covidhospitalisation]
     outputs: 
       moderately_sensitive: 
         txt4: output/data_properties/timeupdated_lc_all_tabulate.txt
@@ -181,7 +189,7 @@ actions:
     run: >
       r:latest
         analysis/041_poisson_regressions_timeupdated.R
-    needs: [time_update_data]
+    needs: [time_update_data, time_update_covidhospitalisation]
     outputs:
       moderately_sensitive:
         poissonrates: output/tab023_poissonrates_timeupdated.csv
