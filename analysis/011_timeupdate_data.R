@@ -38,10 +38,20 @@ arrow::write_parquet(time_data_lc_dx,
 # delete the big dataset to save memory 
 time_data_lc_dx <- NULL
 
-# hospitalised for fracture
+# hospitalised for fracure
 time_data_fracture <- time_update_vaccinedoses(cleaned_data, first_fracture_hosp)
 arrow::write_parquet(time_data_fracture, 
                      sink = here::here("output/timeupdate_dataset_fracture.gz.parquet"),
                      compression = "gzip", compression_level = 5)
 # delete the big dataset to save memory 
 time_data_fracture <- NULL
+
+# hospitalised with COVID-19
+time_data_covidhosp <- time_update_vaccinedoses(cleaned_data, first_covid_hosp)
+arrow::write_parquet(time_data_covidhosp, 
+                     sink = here::here("output/timeupdate_dataset_covidhosp.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+# delete the big dataset to save memory 
+time_data_covidhosp <- NULL
+
+
