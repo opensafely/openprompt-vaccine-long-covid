@@ -14,26 +14,6 @@ time_data_lc_all <- time_update_vaccinedoses(cleaned_data, first_lc)
 arrow::write_parquet(time_data_lc_all, 
                      sink = here::here("output/timeupdate_dataset_lc_all.gz.parquet"),
                      compression = "gzip", compression_level = 5)
-
-# Long COVID Dx only
-time_data_lc_dx <- time_update_vaccinedoses(cleaned_data, first_lc_dx)
-arrow::write_parquet(time_data_lc_dx, 
-                     sink = here::here("output/timeupdate_dataset_lc_dx.gz.parquet"),
-                     compression = "gzip", compression_level = 5)
-
-# hospitalised for fracure
-time_data_fracture <- time_update_vaccinedoses(cleaned_data, first_fracture_hosp)
-arrow::write_parquet(time_data_fracture, 
-                     sink = here::here("output/timeupdate_dataset_fracture.gz.parquet"),
-                     compression = "gzip", compression_level = 5)
-
-# hospitalised with COVID-19
-time_data_covidhosp <- time_update_vaccinedoses(cleaned_data, first_covid_hosp)
-arrow::write_parquet(time_data_covidhosp, 
-                     sink = here::here("output/timeupdate_dataset_covidhosp.gz.parquet"),
-                     compression = "gzip", compression_level = 5)
-
-
 options(width=200) # set output width for capture.output
 
 output_dir <- "output/data_properties"
@@ -47,4 +27,31 @@ capture.output(
   file = here(output_dir, paste0(filenamebase, "_skim", ".txt")),
   split = FALSE
 )
+# delete the big dataset to save memory 
+time_data_lc_all <- NULL
+
+# Long COVID Dx only
+time_data_lc_dx <- time_update_vaccinedoses(cleaned_data, first_lc_dx)
+arrow::write_parquet(time_data_lc_dx, 
+                     sink = here::here("output/timeupdate_dataset_lc_dx.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+# delete the big dataset to save memory 
+time_data_lc_dx <- NULL
+
+# hospitalised for fracure
+time_data_fracture <- time_update_vaccinedoses(cleaned_data, first_fracture_hosp)
+arrow::write_parquet(time_data_fracture, 
+                     sink = here::here("output/timeupdate_dataset_fracture.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+# delete the big dataset to save memory 
+time_data_fracture <- NULL
+
+# hospitalised with COVID-19
+time_data_covidhosp <- time_update_vaccinedoses(cleaned_data, first_covid_hosp)
+arrow::write_parquet(time_data_covidhosp, 
+                     sink = here::here("output/timeupdate_dataset_covidhosp.gz.parquet"),
+                     compression = "gzip", compression_level = 5)
+# delete the big dataset to save memory 
+time_data_covidhosp <- NULL
+
 
