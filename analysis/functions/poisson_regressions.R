@@ -14,15 +14,19 @@ poisson_regressions <- function(cohort_data, stratifier) {
   
   if (number_levels > 1) {
     fm1 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier))
-    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex")
+    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex + variant")
     
-    # need to avoid duplication in fm2 in ase age_cat or sex is the primary stratifier:
+    # need to avoid duplication in fm2 in case age_cat or sex is the primary stratifier:
     fm2b <- ifelse(str_detect(stratifier, "age"), 
-                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex"),
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex + variant"),
                   fm2a)
     fm2 <- ifelse(str_detect(stratifier, "sex"), 
-                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred"),
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + variant"),
                   fm2b) %>% as.formula()
+    
+    # add variant if (and only if) a time_updated dataset is being used
+    # as this variable is not available in clean_data
+    
     
     # remove a lot of the memory intensive fat from the model object but keep necessary bits to predict rates
     shrink_glm_mem <- function(glm_fitted) {
@@ -56,6 +60,8 @@ poisson_regressions <- function(cohort_data, stratifier) {
                                      dplyr::select(all_of(stratifier)) %>% 
                                      pull())[1],
                                    "(baseline)")
+    
+    # a row of fake data to preserve the sturucture of the results dataset
     intercept_data_to_add <- bind_cols(term = stratifier_intercept, 
               estimate = NA, 
               std_error = NA, 
@@ -84,3 +90,4 @@ poisson_regressions <- function(cohort_data, stratifier) {
              baseline = stratifier_intercept)
   }
 }
+
