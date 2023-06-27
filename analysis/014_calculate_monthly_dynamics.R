@@ -12,6 +12,8 @@ dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 
+redact_threshold <- 10
+
 # import data ------------------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 
@@ -66,8 +68,6 @@ readr::write_csv(dt_monthly, here::here("output/data_monthly_dynamics.csv"))
 
 
 # redact output table for summary -----------------------------------------
-redact_threshold <- 7
-
 redacted_monthly <- dt_monthly %>% 
   mutate(
     n_eligible_pt = redact_and_round(n_eligible_pt, redact_threshold),
