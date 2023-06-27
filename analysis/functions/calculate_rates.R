@@ -7,6 +7,7 @@
 
 calculate_rates <- function(data, grouping_var){
   data %>% 
+    filter(!is.na({{grouping_var}})) %>% 
     group_by({{grouping_var}}) %>% 
     summarise(
       n = n(), 

@@ -248,13 +248,13 @@ plot(plot_uk_gov_cases$date, plot_uk_gov_cases$roll_mean, type = "l", col = 1, l
      xaxt = "n", yaxt = "n", xlab = "", ylab = "")
 axis(side = 4)
 mtext("Positive cases in England (7-day average)", side = 4, padj = 4)
-legend("topleft", legend = c("long COVID", "long COVID Dx only", "long COVID in hospital", "Positive COVID-19 tests (Eng)"), lty = 1, col = c(cols[c(1:2, 6)], 1))
+legend("topleft", legend = c("long COVID", "long COVID Dx only", "Positive COVID-19 tests (Eng)"), lty = 1, col = c(cols[c(1:2)], 1))
 dev.off()
 
 # stacked bar chart for proportion Rx vs Dx -------------------------------
 stacked_bar <- timeseries_plot %>% 
   group_by(date, outcome) %>% 
-  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = 0), .groups = "keep")
+  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = redact_threshold), .groups = "keep")
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
 p2e <- ggplot(stacked_bar, aes(fill=lc_dx, y=redacted_out, x=date)) + 
