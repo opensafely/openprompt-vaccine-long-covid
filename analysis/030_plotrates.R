@@ -16,6 +16,7 @@ dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 redact_threshold <- 10
 
 # import data ------------------------------------------------------------
+dt_daily <- readr::read_csv(here::here("output/data_daily_dynamics.csv"))
 dt_monthly <- readr::read_csv(here::here("output/data_monthly_dynamics.csv"))
 uk_gov_cases <- readr::read_csv(here::here("data/data_2023-Apr-27.csv"))
 
@@ -43,17 +44,24 @@ colours_dx <- colours #hcl.colors(n_groups, palette = "zissou1")
 # plot time of Long COVID diagnosis ---------------------------------------
 summarise_records_by_month <- function(timedata_in, outcome_var){
   timedata_in %>% 
+    # remove all the people with NA outcome
+    filter(!is.na(outcome)) %>% 
+    # create a binayr and date variable for the outcome
     rename(outcome_binary = {{outcome_var}},
            outcome_date = outcome) %>% 
     ungroup() %>% 
+    # redundant filter but keep it in for safety
     filter(sex %in% c("male", "female")) %>% 
+    # select the important variables
     dplyr::select(patient_id, age_cat, sex, vaccines, outcome_date, outcome_binary) %>% 
-    mutate(month = month(outcome_date),
+    # get the week number and year from the date
+    mutate(week = isoweek(outcome_date),
            year = year(outcome_date)) %>% 
-    group_by(year, month, sex, vaccines) %>% 
+    # group and summarise weekly counts
+    group_by(year, week, sex, vaccines) %>% 
     summarise(sum_out = sum(outcome_binary, na.rm = TRUE), .groups = "keep") %>% 
-    mutate(day = 1,
-           date = make_date(year, month, day))
+    # make a fake date variable for plotting purposes
+    mutate(date = make_date(year, 1, 1) + (week*7))
 }
 timeseries_lc_all <- summarise_records_by_month(time_data_lc_all, lc_out) %>% 
   mutate(outcome = "long COVID")
@@ -64,43 +72,51 @@ timeseries_plot <- bind_rows(timeseries_lc_all,
 timeseries_lc_all <- NULL
 timeseries_lc_dx <- NULL
 
-timeseries_plot$redacted_out <- redactor2(timeseries_plot$sum_out, threshold = 10)
+timeseries_plot$redacted_out <- redactor2(timeseries_plot$sum_out, threshold = redact_threshold)
 
 # for p2 need to agregate by sex to get a single panel plot
 p2_data <- timeseries_plot %>% 
   group_by(date, outcome) %>% 
-  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = 0), .groups = "keep")
+  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = redact_threshold), .groups = "keep")
 
-# group by sex as well redact data for 2x2 plot
-p2b_data <- timeseries_plot %>% 
-  group_by(date, sex, outcome) %>% 
-  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = 0), .groups = "keep")
+if(max(p2_data$redacted_out, na.rm = T) > 0){
+  p_base <- ggplot(p2_data, aes(x = date, y = redacted_out, colour = outcome, fill = outcome)) +
+      labs(x = "Date", y = "Count of Long COVID codes") +
+      scale_color_manual(values = cols[1:2]) +
+      scale_fill_manual(values = cols[1:2]) +
+      theme_ali() + 
+      theme(strip.background = element_blank())
+  
+  p2 <- p_base + 
+    geom_line(lwd = 0.2, lty = 1) +
+    labs(colour = "Long COVID record") +
+    theme(legend.position = "top")
+  
+  # group by sex as well redact data for 2x2 plot
+  p2b_data <- timeseries_plot %>% 
+    group_by(date, sex, outcome) %>% 
+    summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = redact_threshold), .groups = "keep")
 
-p_base <- ggplot(p2_data, aes(x = date, y = redacted_out, colour = outcome, fill = outcome)) +
-    labs(x = "Date", y = "Count of Long COVID codes") +
-    scale_color_manual(values = cols[1:2]) +
-    scale_fill_manual(values = cols[1:2]) +
-    theme_ali() + 
-    theme(strip.background = element_blank())
+  if(max(p2b_data$redacted_out, na.rm = T) > 0){
+    p2a <- p_base +
+      geom_col(data = p2b_data, col = "gray20", lwd = 0.2) +
+      facet_grid(sex~outcome) +
+      theme(legend.position = "none")
+    
+  }else{
+    p2a <- ggplot() + theme_void()
+  } # end 
+}else{
+  p2 <- ggplot() + theme_void()
+} # end 
 
-p2 <- p_base + 
-  geom_line(lwd = 0.2, lty = 1) +
-  labs(colour = "Long COVID record") +
-  theme(legend.position = "top")
 pdf(here("output/figures/fig2_raw_counts_line.pdf"), width = 8, height = 6)
   p2
 dev.off()
 
-p2a <- p_base +
-  geom_col(data = p2b_data, col = "gray20", lwd = 0.2) +
-  facet_grid(sex~outcome) +
-  theme(legend.position = "none")
-
 pdf(here("output/figures/fig2a_raw_counts_line_bysex.pdf"), width = 8, height = 6)
   p2a
 dev.off()
-
-
 # column chart by vaccine status ------------------------------------------
 # get long covid (ANY)  summarised by sex for a single panel plot
 p2b_data <- timeseries_plot %>% 
@@ -113,32 +129,35 @@ p2b_data <- timeseries_plot %>%
 p2c_data <- timeseries_plot %>% 
   mutate(redacted_out = redactor2(sum_out, threshold = redact_threshold)) 
 
-# make base plot for 2b and 2c  
-p2base <- ggplot(p2c_data, aes(x = date, y = redacted_out, fill = vaccines)) +
-  scale_fill_manual(values = colours) +
-  labs(x = "Date", y = "Count of Long COVID codes", fill = "Vaccines received") +
-  theme_ali() + 
-  theme(strip.background = element_blank())
+if(max(p2c_data$redacted_out, na.rm = T) > 0){
+  # make base plot for 2b and 2c  
+  p2base <- ggplot(p2c_data, aes(x = date, y = redacted_out, fill = vaccines)) +
+    scale_fill_manual(values = colours) +
+    labs(x = "Date", y = "Count of Long COVID codes", fill = "Vaccines received") +
+    theme_ali() + 
+    theme(strip.background = element_blank())
+  
+  # plot column in a single panel
+  p2b <- p2base +
+    geom_col(data = p2b_data, lwd = 0.2, lty = 1, col = "gray20") +
+    theme(legend.position = "top")
+  
+  # plot 2x2 panel version of long covid by vaccine status over time
+  p2c <- p2base +
+    geom_col(lwd = 0.2, lty = 1, col = "gray20") +
+    facet_grid(sex~outcome)
+}else{
+  p2b <- ggplot() + theme_void()
+  p2c <- ggplot() + theme_void()
+} # end 
 
-# plot column in a single panel
-p2b <- p2base +
-  geom_col(data = p2b_data, lwd = 0.2, lty = 1, col = "gray20") +
-  theme(legend.position = "top")
-
-# output fig 2b
 pdf(here("output/figures/fig2b_raw_counts_column.pdf"), width = 8, height = 6)
   p2b
 dev.off()
 
-# plot 2x2 panel version of long covid by vaccine status over time
-p2c <- p2base +
-  geom_col(lwd = 0.2, lty = 1, col = "gray20") +
-  facet_grid(sex~outcome)
-
 pdf(here("output/figures/fig2c_raw_counts_column_bysex.pdf"), width = 8, height = 6)
   p2c
 dev.off()
-
 
 # Monthly dynamics plots --------------------------------------------------
 # incidence curves
@@ -259,6 +278,36 @@ p2_full <- cowplot::plot_grid(
 
 pdf(here("output/figures/fig2_longcovid_dynamics.pdf"), width = 11, height = 8)
   p2_full
+dev.off()
+
+# daily dynamics  ---------------------------------------------------------
+pd <- position_dodge(width = 0.5)
+p4f1 <- ggplot(dt_daily, aes(x = date)) + 
+  geom_col(aes(y = n_first_lc, fill = "long COVID"), lwd = 1, position = pd) +
+  geom_col(aes(y = n_first_lc_dx, fill = "long COVID Dx"), lwd = 1, position = pd) +
+  labs(x = "Month", y = "Incidence (%)", 
+       colour = "COVID-19 outcome") +
+  guides(fill=guide_legend(nrow=1,byrow=TRUE)) +
+  scale_fill_manual(values = cols[1:2]) +
+  theme_ali() +
+  theme(legend.position = "bottom",
+        legend.box="vertical", 
+        legend.margin=margin())
+
+p4f2 <- ggplot(dt_daily, aes(x = date)) + 
+  geom_line(aes(y = (inc_first_lc*100), col = "long COVID")) +
+  geom_line(aes(y = (inc_first_lc_dx*100), col = "long COVID Dx")) +
+  labs(x = "Month", y = "Incidence (%)", 
+       colour = "COVID-19 outcome") +
+  guides(colour=guide_legend(nrow=1,byrow=TRUE)) +
+  scale_colour_manual(values = cols[1:2]) +
+  theme_ali() +
+  theme(legend.position = "bottom",
+        legend.box="vertical", 
+        legend.margin=margin())
+
+pdf(here("output/figures/fig4f_daily_cases.pdf"), width = 8, height = 10)
+  cowplot::plot_grid(p4f1, p4f2, ncol = 1)
 dev.off()
 
 # supplement - time gaps between vaccine doses  ---------------------------
