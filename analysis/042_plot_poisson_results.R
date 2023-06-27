@@ -127,7 +127,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(7, 3), le
                         colour = get(y_col_var)
                       )) +
     geom_hline(yintercept = 1, colour = "gray60") +
-    geom_pointrange(pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
+    geom_pointrange(size = 10, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
     #geom_point(position = position_dodge(width = 0.5)) +
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",
@@ -141,7 +141,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(7, 3), le
     ) +
     scale_color_manual(values = cols) +
     scale_y_log10(breaks = c(0.2, 0.33, 0.5, 1.0, 2.0, 3.0, 5),
-                  limits = c(0.2, 5),
+                  limits = c(0.2, 6),
                   minor_breaks = NULL) +
     theme_classic() +
     theme(
