@@ -14,6 +14,13 @@ run_the_regressions <- function(data){
 
 stratifiers_t <-
   c(
+    "sex",
+    "age_cat",
+    "practice_nuts",
+    "ethnicity",
+    "imd_q5",
+    "comorbidities",
+    "highrisk_shield",
     "vaccines",
     "t_vacc_primary",
     "t_vacc_mrna"
@@ -21,6 +28,13 @@ stratifiers_t <-
 
 strat_plot_names_t <-
   c(
+    "Sex",
+    "Age category",
+    "Region",
+    "Ethnicity",
+    "IMD (quintile)",
+    "Comorbidities",
+    "Shielding (high risk group)",
     "No. vaccine doses",
     "First vaccine received",
     "mRNA vaccine received"
