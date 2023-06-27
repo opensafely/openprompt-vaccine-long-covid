@@ -65,7 +65,10 @@ tidy_crude_rates <- crude_rates %>%
                       "Comorbidities",
                       "Shielding (high risk group)"
                     ))) %>% 
-  arrange(stratifier) 
+  arrange(stratifier) %>% 
+  # drop any crude rates that have NaN values in the CIs because this
+  # causes errors later on
+  filter(lc_dx>0)
 
 # redact output 
 redacted_crude_rates <- tidy_crude_rates %>% 
@@ -102,7 +105,6 @@ redacted_crude_rates <- tidy_crude_rates %>%
 ## output the neat csv
 redacted_crude_rates %>% 
   write_csv(here("output/tables/tab3_crude_rates_redacted.csv"))
-
 
 # make a nice plot of the crude rates  ------------------------------------
 plot_crude_rates <- tidy_crude_rates %>% 

@@ -14,12 +14,6 @@ cases_data_path <- here("output/dataset_cases.csv.gz")
 controls_data_path <- here("output/dataset_controls.csv.gz")
 
 # import, combine, clean data -------------------------------------------------
-longcovid_combined_codelist <- bind_rows(
-  readr::read_csv(here("codelists/opensafely-nice-managing-the-long-term-effects-of-covid-19.csv")),
-  readr::read_csv(here("codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv")),
-  readr::read_csv(here("codelists/opensafely-referral-and-signposting-for-long-covid.csv"))
-)
-
 imported_data <-
   import_raw_data(cases_path = cases_data_path, controls_path = controls_data_path)
 
