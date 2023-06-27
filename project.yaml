@@ -116,15 +116,6 @@ actions:
       moderately_sensitive: 
         daily_dynamics: output/data_daily_dynamics.csv
 
-  crude_rates:
-    run: >
-      r:latest
-        analysis/020_cruderates.R
-    needs: [clean_the_data]
-    outputs:
-      moderately_sensitive:
-        cruderates: output/tab021_crude_lc_rates.csv
-
   crude_rates_timeupdated:
     run: >
       r:latest
@@ -139,7 +130,7 @@ actions:
     run: >
       r:latest
         analysis/022_combine_cruderates.R
-    needs: [crude_rates, crude_rates_timeupdated]
+    needs: [crude_rates_timeupdated]
     outputs:
       moderately_sensitive:
         cruderates_redacted: output/tables/tab3_crude_rates_redacted.csv
@@ -189,15 +180,6 @@ actions:
         longcovid_flows: output/figures/fig5_longcovid_flows.pdf
         longcovid_flows_data: output/sankey_plot_data.csv
 
-  poisson_rates_static:
-    run: >
-      r:latest
-        analysis/040_poisson_regressions_staticvars.R
-    needs: [clean_the_data]
-    outputs:
-      moderately_sensitive:
-        poissonrates: output/tab023_poissonrates_static.csv
-
   poisson_rates_timeupdated:
     run: >
       r:latest
@@ -211,7 +193,7 @@ actions:
     run: >
       r:latest
         analysis/042_plot_poisson_results.R
-    needs: [poisson_rates_static, poisson_rates_timeupdated]
+    needs: [poisson_rates_timeupdated]
     outputs: 
       moderately_sensitive: 
         fig3a: output/figures/fig3a_crude_RRs.pdf
