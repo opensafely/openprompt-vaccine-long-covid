@@ -8,10 +8,7 @@ library(here)
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
 
-adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") %>% 
-  bind_rows(
-    read_csv("output/tab023_poissonrates_static.csv")
-  )
+adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 
@@ -127,7 +124,7 @@ create_forest_plot <- function(data_in, y_col_var, plot_rel_widths = c(7, 3), le
                         colour = get(y_col_var)
                       )) +
     geom_hline(yintercept = 1, colour = "gray60") +
-    geom_pointrange(size = 10, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
+    geom_pointrange(size = 3, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
     #geom_point(position = position_dodge(width = 0.5)) +
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",

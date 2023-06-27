@@ -15,7 +15,15 @@ time_update_vaccinedoses <- function(data, outcome_var){
     dplyr::select(patient_id, 
                   starts_with("pt_"), 
                   contains("age"), 
-                  sex, 
+                  sex,
+                  age_cat,
+                  no_prev_vacc,
+                  vaccine_schedule_detail,
+                  practice_nuts,
+                  imd_q5,
+                  comorbidities,
+                  highrisk_shield,
+                  ethnicity,
                   {{outcome_var}}, 
                   contains("vaccine_dose"),
                   contains("vaccine_schedule"),
@@ -53,28 +61,13 @@ time_update_vaccinedoses <- function(data, outcome_var){
   df_vacc_base_t <- small_base %>%
     # again, need to filter out anyone who has the event before/on the same day as study entry (should be redundant but just in case)
     filter(t>0) %>% 
-    select(patient_id, pt_start_date, contains("vaccine_dose_"), contains("vaccine_schedule_"), first_mrna_vaccine_date) %>% 
+    select(patient_id, pt_start_date, contains("vaccine_dose_")) %>% 
     mutate(vacc_time_1 = pt_start_date %--% vaccine_dose_1_date / dyears(1),
            vacc_time_2 = pt_start_date %--% vaccine_dose_2_date / dyears(1),
            vacc_time_3 = pt_start_date %--% vaccine_dose_3_date / dyears(1)
            ) %>% 
     dplyr::select(-contains("vaccine_dose")) %>% 
     pivot_longer(cols = starts_with("vacc_time_"), names_to = "vacc_no", names_pattern = "vacc_time_(.*)", values_to = "years")
-  
-  ## check the right number of patids are involved before doing the computationally intensive tmerge stuff
-  isEmpty <- function(x) {
-    return(length(x)==0)
-  }
-  l1 <- unique(small_base$patient_id)
-  l2 <- unique(df_vacc_base_t$patient_id)
-  if(!isEmpty(setdiff(l1, l2))){stop("id values in time updated vaccine data that are not in base data")}
-  
-  # create new time-updated version of homologous/heterologous vaccine dose - need two versions of a time-updated variable (one with detail, one grouped by homo/hetero)
-  vaccines_schedule_timeupdate <- df_vacc_base_t %>% 
-    filter(!is.na(years))
-  vaccines_schedule_timeupdate$vaccine_schedule_detail[vaccines_schedule_timeupdate$vacc_no == "1"] <- "1 dose"
-  # 2nd dose if a three doser
-  vaccines_schedule_timeupdate$vaccine_schedule_detail[vaccines_schedule_timeupdate$vacc_no == "2"] <- as.character(vaccines_schedule_timeupdate$vaccine_schedule_twodose_detail[vaccines_schedule_timeupdate$vacc_no == "2"])
   
   ## repeat that process for mrna 
   df_vacc_base_mrna <- small_base %>%
@@ -100,15 +93,28 @@ time_update_vaccinedoses <- function(data, outcome_var){
   
   df_vacc_base_primarydose$primary_course = df_vacc_base_primarydose$vaccine_dose_1_manufacturer
   
+  # time update on dominant variant 
+  # from UK covid dashboard https://coronavirus.data.gov.uk/details/cases?areaType=nation%26areaName=England#card-variant_percentage_of_available_sequenced_episodes_by_week
+  date_delta <- as.Date("2021-05-16") 
+  date_omicron <- as.Date("2021-12-01")
+  
+  variant_timeupdate <- small_base %>% 
+    dplyr::select(patient_id, starts_with("pt_"), t) %>%
+    mutate(time_delta = as.numeric((date_delta - pt_start_date) / dyears(1)),
+           time_omicron  = as.numeric((date_omicron - pt_start_date) / dyears(1))) %>% 
+    pivot_longer(cols = starts_with("time_"), names_to = "variant", names_pattern = "time_(.*)", values_to = "years") %>% 
+    filter(years <= t)
+  
   # create the survival dataset 
-  survivaldata <- survival::tmerge(small_base, small_base, id = patient_id, out = event(t, outcome_binary)) 
-  newsurvival <- survival::tmerge(survivaldata, vaccines_schedule_timeupdate, id = patient_id, vaccines = tdc(years, vacc_no, 0)) 
+  survivaldata <- survival::tmerge(small_base, small_base, id = patient_id, out = event(t, outcome_binary))
+  
+  newsurvival <- survival::tmerge(survivaldata, variant_timeupdate, id = patient_id, variant = tdc(years, variant, "wild/alpha")) 
+  
+  newsurvival <- survival::tmerge(newsurvival, df_vacc_base_t, id = patient_id, vaccines = tdc(years, vacc_no, 0)) 
   
   newsurvival <- survival::tmerge(newsurvival, df_vacc_base_mrna, id = patient_id, t_vacc_mrna = tdc(years, mrna, "No vaccine")) 
   
   newsurvival <- survival::tmerge(newsurvival, df_vacc_base_primarydose, id = patient_id, t_vacc_primary = tdc(years, primary_course, "No vaccine")) 
-  
-  newsurvival <- survival::tmerge(newsurvival, vaccines_schedule_timeupdate, id = patient_id, t_vacc_detail = tdc(years, vaccine_schedule_detail, "No vaccine")) 
   
   newsurvival %>%
     select(-outcome_binary,-pt_end_date) %>%
@@ -118,14 +124,12 @@ time_update_vaccinedoses <- function(data, outcome_var){
       levels = 0:3,
       labels = c("0", "1", "2", "3+")
     )) %>%
-    mutate(t_vacc_detail = factor(t_vacc_detail,
-                                  levels = c(
-                                    "No vaccine",
-                                    levels(vaccines_schedule_timeupdate$vaccine_schedule_detail)
-                                  ))) %>%
     mutate(t_vacc_primary = factor(t_vacc_primary,
                                   levels = c("No vaccine", "AstraZeneca", "Pfizer", "Other"))) %>%
     mutate(t_vacc_mrna = factor(t_vacc_mrna,
                                   levels = c("No vaccine", "non_mRNA", "mRNA"))) %>%
+    mutate(variant = factor(variant, 
+                            levels = c("wild/alpha", "delta", "omicron"),
+                            labels = c("0: wild/alpha", "1: delta", "2: omicron"))) %>% 
     mutate(t = tstop - tstart)
 }

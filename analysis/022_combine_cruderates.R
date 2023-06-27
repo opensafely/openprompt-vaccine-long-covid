@@ -9,10 +9,9 @@ output_dir_tab <- here("output/tables")
 fs::dir_create(output_dir_tab)
 fs::dir_create(here("output/figures"))
 
-redact_threshold = 7
+redact_threshold = 10
 
 # tidy crude rates .csv for review ----------------------------------------
-crude_rates_static <- read_csv(here("output/tab021_crude_lc_rates.csv"))
 crude_rates_tuv_lc_all <- read_csv(here("output/tab022_tuv_rates_lc_all.csv"))
 crude_rates_tuv_lc_dx <- read_csv(here("output/tab023_tuv_rates_lc_dx.csv"))
 
@@ -30,13 +29,9 @@ drop_vars <- c("n_fratures",
                "n_rx",
                "total_tests",
                "avg_last_vacc")
-crude_rates_static <- crude_rates_static %>%
-  dplyr::select(-all_of(drop_vars), -contains("errorfactor"), -contains("se_rate")) %>% 
-  filter(!str_detect(stratifier, "vacc"))
 
 #combine the two sets of results
-crude_rates <- crude_rates_static %>% 
-  bind_rows(crude_rates_tuv) %>% 
+crude_rates <- crude_rates_tuv %>% 
   mutate(fup = fup/1e5)
 
 tidy_crude_rates <- crude_rates %>% 
@@ -45,6 +40,7 @@ tidy_crude_rates <- crude_rates %>%
                       "sex",
                       "age_cat",
                       "practice_nuts",
+                      "variant",
                       "vaccines",
                       "t_vacc_primary",
                       "t_vacc_mrna",
@@ -57,6 +53,7 @@ tidy_crude_rates <- crude_rates %>%
                       "Age category",
                       "Sex",
                       "Region",
+                      "Dominant SARS-COV-2 variant",
                       "No. vaccine doses",
                       "First vaccine received",
                       "mRNA vaccine received",
