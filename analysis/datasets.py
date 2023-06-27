@@ -77,7 +77,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # covid tests ------------------------------------------------------------
     positive_tests = sgss_covid_all_tests \
         .where(sgss_covid_all_tests.is_positive) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
+        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date)
 
     dataset.latest_test_before_diagnosis = positive_tests \
         .sort_by(sgss_covid_all_tests.specimen_taken_date).last_for_patient().specimen_taken_date
@@ -90,13 +90,13 @@ def add_common_variables(dataset, study_start_date, end_date, population):
 
     dataset.all_tests = sgss_covid_all_tests \
         .except_where(sgss_covid_all_tests.specimen_taken_date <= study_start_date) \
-        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date - days(covid_to_longcovid_lag)) \
+        .except_where(sgss_covid_all_tests.specimen_taken_date >= dataset.pt_end_date) \
         .count_for_patient()
 
     # covid hospitalisation ------------------------------------------------------------
     covid_hospitalisations = hospitalisation_diagnosis_matches(hospital_admissions, codelists.hosp_covid)
     all_covid_hosp = covid_hospitalisations \
-        .except_where(covid_hospitalisations.admission_date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
+        .except_where(covid_hospitalisations.admission_date >= dataset.pt_end_date)
 
     dataset.all_covid_hosp = all_covid_hosp \
         .count_for_patient()
@@ -113,7 +113,7 @@ def add_common_variables(dataset, study_start_date, end_date, population):
     # Any covid identification ------------------------------------------------------------
     primarycare_covid = clinical_events \
         .where(clinical_events.ctv3_code.is_in(codelists.any_primary_care_code)) \
-        .except_where(clinical_events.date >= dataset.pt_end_date - days(covid_to_longcovid_lag))
+        .except_where(clinical_events.date >= dataset.pt_end_date)
 
     dataset.latest_primarycare_covid = primarycare_covid \
         .sort_by(primarycare_covid.date) \
