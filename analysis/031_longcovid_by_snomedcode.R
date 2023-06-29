@@ -44,7 +44,7 @@ write.csv(snomedcode_table, here::here("output/tables/tab5_snomedcode_count.csv"
 
 # keep the top 5 codes
 x <- snomedcode_table$term
-keep_codes <- x[1:5]
+keep_codes <- x[1:8]
 
 # repeat "Other" for the remaining categories
 other_codes <- rep("Other", length(x)-length(keep_codes))
@@ -83,8 +83,9 @@ p1 <- ggplot(snomed_over_time, aes(x = date, y = sum_out, col = term_fct)) +
   theme_ali() +
   theme(legend.position = "bottom",
         legend.box="vertical", 
+        legend.text = element_text(size = 8),
         legend.margin=margin())
 
-pdf(here::here("output/figures/fig2f_raw_counts_by_code.pdf"), width = 10, height = 6)
+pdf(here::here("output/figures/fig2f_raw_counts_by_code.pdf"), width = 12, height = 6)
   p1
 dev.off()
