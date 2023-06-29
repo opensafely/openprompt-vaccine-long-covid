@@ -34,6 +34,7 @@ vaccine_to_longcovid_lag = covid_to_longcovid_lag + vaccine_effective_lag
 def add_common_variables(dataset, study_start_date, end_date, population):
     # practice registration selection
     registrations = practice_registrations \
+        .except_where(practice_registrations.start_date >= end_date) \
         .except_where(practice_registrations.end_date <= study_start_date)
 
     # get the number of registrations in this period to exclude anyone with >1 in the `set_population` later
