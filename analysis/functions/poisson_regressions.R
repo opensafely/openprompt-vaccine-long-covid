@@ -14,19 +14,15 @@ poisson_regressions <- function(cohort_data, stratifier) {
   
   if (number_levels > 1) {
     fm1 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier))
-    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex + variant")
+    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex")
     
     # need to avoid duplication in fm2 in case age_cat or sex is the primary stratifier:
     fm2b <- ifelse(str_detect(stratifier, "age"), 
-                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex + variant"),
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex"),
                   fm2a)
     fm2 <- ifelse(str_detect(stratifier, "sex"), 
-                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + variant"),
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred"),
                   fm2b) %>% as.formula()
-    
-    # add variant if (and only if) a time_updated dataset is being used
-    # as this variable is not available in clean_data
-    
     
     # remove a lot of the memory intensive fat from the model object but keep necessary bits to predict rates
     shrink_glm_mem <- function(glm_fitted) {
@@ -54,40 +50,49 @@ poisson_regressions <- function(cohort_data, stratifier) {
         )
     }
     
-    # get level for the intercept term
-    stratifier_intercept <- paste0(stratifier, 
-                                   levels(cohort_data %>% 
-                                     dplyr::select(all_of(stratifier)) %>% 
-                                     pull())[1],
-                                   "(baseline)")
+    stratifier_output <- NULL
+    for(variant in levels(cohort_data$variant)){
+      variant_data <- cohort_data[cohort_data$variant == variant, ]
+      
+      # get level for the intercept term
+      stratifier_intercept <- paste0(stratifier, 
+                                     levels(variant_data %>% 
+                                       dplyr::select(all_of(stratifier)) %>% 
+                                       pull())[1],
+                                     "(baseline)")
+      
+      # a row of fake data to preserve the sturucture of the results dataset
+      intercept_data_to_add <- bind_cols(term = stratifier_intercept, 
+                estimate = NA, 
+                std_error = NA, 
+                z_value = NA, 
+                pr_z = NA, 
+                rate = 1,
+                conf.low = 1, 
+                conf.high = 1)
     
-    # a row of fake data to preserve the sturucture of the results dataset
-    intercept_data_to_add <- bind_cols(term = stratifier_intercept, 
-              estimate = NA, 
-              std_error = NA, 
-              z_value = NA, 
-              pr_z = NA, 
-              rate = 1,
-              conf.low = 1, 
-              conf.high = 1)
-  
-    poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = cohort_data, family = poisson(link = "log")))
-    crude_output <- convert_to_rates(poissonmodel_crude) %>% 
-      bind_rows(intercept_data_to_add)
-    poissonmodel_crude <- NULL
-  
-    poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
-    adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
-      bind_rows(intercept_data_to_add)
-    poissonmodel_adj <- NULL
+      poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = variant_data, family = poisson(link = "log")))
+      crude_output <- convert_to_rates(poissonmodel_crude) %>% 
+        bind_rows(intercept_data_to_add)
+      poissonmodel_crude <- NULL
     
-    bind_rows(
-      mutate(crude_output, model = "crude"),
-      mutate(adjusted_output, model = "adjusted"),
-    ) %>% 
-      mutate(plot_marker = stringr::str_detect(term, stratifier),
-             var = stratifier,
-             baseline = stratifier_intercept)
+      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
+      adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
+        bind_rows(intercept_data_to_add)
+      poissonmodel_adj <- NULL
+    
+      stratifier_by_variant <- bind_rows(
+        mutate(crude_output, model = "crude"),
+        mutate(adjusted_output, model = "adjusted"),
+      ) %>% 
+        mutate(plot_marker = stringr::str_detect(term, stratifier),
+               var = stratifier,
+               baseline = stratifier_intercept,
+               covid_variant = variant)
+      stratifier_output <- bind_rows(stratifier_output,
+                                     stratifier_by_variant)
+    }
+    stratifier_output
   }
 }
 
