@@ -136,12 +136,12 @@ if(max(p2c_data$redacted_out, na.rm = T) > 0){
   
   # plot column in a single panel
   p2b <- p2base +
-    geom_col(data = p2b_data, lwd = 0.2, lty = 0) +
+    geom_col(data = p2b_data, lwd = 0, lty = 0, width = 6) +
     theme(legend.position = "top")
   
   # plot 2x2 panel version of long covid by vaccine status over time
   p2c <- p2base +
-    geom_col(lwd = 0.2, lty = 0) +
+    geom_col(lwd = 0.2, lty = 0, width = 6) +
     facet_grid(sex~outcome)
 }else{
   p2b <- ggplot() + theme_void()
@@ -163,7 +163,7 @@ stacked_bar <- timeseries_plot %>%
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
 p2e <- ggplot(stacked_bar, aes(fill=lc_dx, y=redacted_out, x=date)) + 
-  geom_bar(position="fill", stat="identity", width = 99) +
+  geom_bar(position="fill", stat="identity", width = 6) +
   scale_fill_manual(values = lc_dx_cols) +
   labs(x = "Date", y = "Type of long COVID code", fill = "Rx or Dx code") +
   theme_ali() + 
