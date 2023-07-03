@@ -55,6 +55,16 @@ actions:
         txt5: output/data_properties/lcfirst_cohort_skim.txt
         txt6: output/data_properties/lcfirst_cohort_tabulate.txt
         tab1_lc_first: output/tables/tab1_full_description_lc_first.html
+  
+  plot_vaccine_after_longcovid: 
+    run: >
+      r:latest
+        analysis/0102_vaccine_after_longcovid.R
+    needs: [clean_lc_pre_vacc_data]
+    outputs: 
+      moderately_sensitive: 
+        vaccine_pct_plot: output/figures/fig6_vaccine_after_lc.pdf
+        vaccine_pct_data: output/lc_first_vaccination.csv
 
   time_update_data: 
     run: >
@@ -140,7 +150,7 @@ actions:
     run: >
       r:latest
         analysis/030_plotrates.R
-    needs: [time_update_data, calculate_monthly_dynamics, calculate_daily_dynamics]
+    needs: [time_update_data]
     outputs:
       moderately_sensitive:
         counts_line: output/figures/fig2_raw_counts_line.pdf
@@ -150,12 +160,6 @@ actions:
         stackedbar: output/figures/fig2e_longcovid_stacked_dx_rx.pdf
         multipanelfig: output/figures/fig2_longcovid_dynamics.pdf
         vaccinegap: output/supplementary/fig_agegap_vaccines.pdf
-        monthly_plot_v1: output/figures/fig4a_outbreak_dynamics.pdf
-        monthly_plot_v2: output/figures/fig4b_outbreak_dynamics_cumulative.pdf
-        monthly_plot_v3: output/figures/fig4c_outbreak_dynamics_experimental.pdf
-        monthly_plot_v4: output/figures/fig4d_outbreak_dynamics_log.pdf
-        monthly_plot_v5: output/figures/fig4e_longcovid_and_national_cases.pdf
-        daily_plot_v1: output/figures/fig4f_daily_cases.pdf
 
   longcovid_by_snomedcode:
     run: >
@@ -166,7 +170,7 @@ actions:
       moderately_sensitive:
         tab_snomedcode_count: output/tables/tab5_snomedcode_count.csv
         fig_snomedcode_over_time: output/figures/fig2f_raw_counts_by_code.pdf
-
+        tab_snomedcode_over_time: output/raw_counts_by_code_over_time.csv
 
   plot_longcovid_flows:
     run: >
@@ -179,6 +183,30 @@ actions:
         tests_density: output/supplementary/test_to_longcovid_density.pdf
         longcovid_flows: output/figures/fig5_longcovid_flows.pdf
         longcovid_flows_data: output/sankey_plot_data.csv
+        demographics_by_test_status: output/tables/tab_demographics_by_test_status.html
+  
+  plot_daily_dynamics:
+    run: >
+      r:latest
+        analysis/033_plot_daily_dynamics.R
+    needs: [calculate_daily_dynamics]
+    outputs:
+      moderately_sensitive:
+        dailydynamics_plot: output/figures/fig4f_daily_cases.pdf
+        dailydynamics_data: output/data_daily_dynamics_plot.csv
+  
+  plot_monthly_dynamics:
+    run: >
+      r:latest
+        analysis/034_plot_monthly_dynamics.R
+    needs: [calculate_monthly_dynamics]
+    outputs:
+      moderately_sensitive:
+        monthly_plot_v1: output/figures/fig4a_outbreak_dynamics.pdf
+        monthly_plot_v2: output/figures/fig4b_outbreak_dynamics_cumulative.pdf
+        monthly_plot_v3: output/figures/fig4c_outbreak_dynamics_experimental.pdf
+        monthly_plot_v4: output/figures/fig4d_outbreak_dynamics_log.pdf
+        monthly_plot_v5: output/figures/fig4e_longcovid_and_national_cases.pdf
 
   poisson_rates_timeupdated:
     run: >
@@ -196,13 +224,13 @@ actions:
     needs: [poisson_rates_timeupdated]
     outputs: 
       moderately_sensitive: 
-        fig3a: output/figures/fig3a_crude_RRs.pdf
+        #fig3a: output/figures/fig3a_crude_RRs.pdf
         fig3b: output/figures/fig3b_adjusted_RRs.pdf
-        fig3c: output/figures/fig3c_longcovid_RRs.pdf
-        fig3d: output/figures/fig3d_longcovid_models.pdf
+        #fig3c: output/figures/fig3c_longcovid_RRs.pdf
+        #fig3d: output/figures/fig3d_longcovid_models.pdf
         fig3e: output/figures/fig3e_vaccines.pdf
-        fig3f: output/figures/fig3f_longcovid_vaccine_models.pdf
-        fig3g: output/figures/fig3g_demographics.pdf
-        poissonplots_all: output/figures/fig3h_rate_ratios_facet.pdf
+        #fig3f: output/figures/fig3f_longcovid_vaccine_models.pdf
+        #fig3g: output/figures/fig3g_demographics.pdf
+        #poissonplots_all: output/figures/fig3h_rate_ratios_facet.pdf
         poissonplots_table: output/tables/tab4_poisson_rateratios.csv
 
