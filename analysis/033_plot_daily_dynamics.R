@@ -11,6 +11,16 @@ redact_threshold <- 10
 
 dt_daily <- readr::read_csv(here::here("output/data_daily_dynamics.csv"))
 
+# define colours ----------------------------------------------------------
+cols <- c(
+  "long COVID" = "red1",
+  "long COVID Dx" = "dodgerblue1",
+  "Hospitalised" = "orange",
+  "Last test positive" = "black",
+  "1st vaccine dose" = "blueviolet",
+  "long COVID hospital" = "forestgreen")
+
+lc_dx_cols <- c("coral", "aquamarine2")
 # daily dynamics  ---------------------------------------------------------
 pd <- position_dodge(width = 0.5)
 p4f1 <- ggplot(dt_daily, aes(x = date)) + 
