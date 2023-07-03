@@ -6,6 +6,7 @@ library(here)
 library(arrow)
 
 source(here::here("analysis/functions/redaction.R"))
+source(here::here("analysis/functions/ggplot_theme.R"))
 
 # create folders to put plots in
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
