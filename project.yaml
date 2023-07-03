@@ -60,7 +60,7 @@ actions:
     run: >
       r:latest
         analysis/0102_vaccine_after_longcovid.R
-    needs: [clean_lc_pre_vacc_data]
+    needs: [clean_lc_pre_vacc_data, clean_the_data]
     outputs: 
       moderately_sensitive: 
         vaccine_pct_plot: output/figures/fig6_vaccine_after_lc.pdf
