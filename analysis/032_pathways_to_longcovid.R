@@ -115,6 +115,11 @@ sankey_plot$hosp <- factor(sankey_plot$hosp,
 
 sankey_plot$freq <- redactor2(sankey_plot$freq, threshold = 10)
 
+sankey_plot <- sankey_plot %>% 
+  group_by(lc_dx_flag) %>% 
+  mutate(pc = (freq*100) / sum(freq, na.rm = TRUE)) %>% 
+  ungroup()
+
 readr::write_csv(sankey_plot, here::here("output/sankey_plot_data.csv"))
 
 sankey_plotv2 <- sankey_plot %>% 
