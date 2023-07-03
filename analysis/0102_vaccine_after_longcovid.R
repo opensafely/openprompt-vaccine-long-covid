@@ -17,7 +17,7 @@ output_dir_tab <- here("output/tables")
 fs::dir_create(output_dir_tab)
 
 vacc_range <- range(lc_first$no_total_vacc)
-lc_first$over2_vacc = factor(lc_first$no_total_vacc, labels = c("0", "1", rep("2+", vacc_range[2] - vacc_range[1] - 2)))
+lc_first$over2_vacc = factor(lc_first$no_total_vacc, levels = 0:vacc_range[2], labels = c("0", "1", rep("2+", vacc_range[2] - vacc_range[1] - 1)))
 lc_first_vacced <- lc_first %>% 
   group_by(over2_vacc, sex, age_cat, ethnicity) %>% 
   summarise(n = n(), .groups = "keep") %>% 
