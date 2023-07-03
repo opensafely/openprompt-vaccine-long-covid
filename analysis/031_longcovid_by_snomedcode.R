@@ -1,10 +1,6 @@
 library(tidyverse)
-library(broom)
 library(lubridate)
-library(survival)
 library(here)
-library(data.table)
-## also uses zoo and cowplot, referred to directly
 
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
@@ -44,13 +40,15 @@ write.csv(snomedcode_table, here::here("output/tables/tab5_snomedcode_count.csv"
 
 # keep the top 5 codes
 x <- snomedcode_table$term
-keep_codes <- x[1:8]
+keep_codes <- x[1:5]
 
 # repeat "Other" for the remaining categories
 other_codes <- rep("Other", length(x)-length(keep_codes))
 
 # create factor variable with new grouping
-clean_data_snomedcode$term_fct <- factor(clean_data_snomedcode$term, labels = c(keep_codes, other_codes))
+clean_data_snomedcode$term_fct <- factor(clean_data_snomedcode$term, 
+                                         levels = snomedcode_table$term, 
+                                         labels = c(keep_codes, other_codes))
 
 summarise_records_by_month <- function(timedata_in, outcome_date){
   timedata_in %>% 
@@ -61,16 +59,17 @@ summarise_records_by_month <- function(timedata_in, outcome_date){
     # select the important variables
     dplyr::select(patient_id, first_lc_code, term_fct, outcome_date, outcome_binary) %>% 
     # get the week number and year from the date
-    mutate(week = isoweek(outcome_date),
-           year = year(outcome_date)) %>% 
+    mutate(week = lubridate::week(outcome_date),
+           year = lubridate::year(outcome_date)) %>% 
     # group and summarise weekly counts
     group_by(year, week, term_fct) %>% 
     summarise(sum_out = sum(outcome_binary, na.rm = TRUE), .groups = "keep") %>% 
     # make a fake date variable for plotting purposes
-    mutate(date = make_date(year, 1, 1) + (week*7))
+    mutate(date = lubridate::make_date(year, 1, 1) + (week*7))
 }
 snomed_over_time <- summarise_records_by_month(filter(clean_data_snomedcode, !is.na(first_lc)), "first_lc")
 
+write.csv(snomed_over_time, here::here("output/raw_counts_by_code_over_time.csv"))
 # TODO: add in redaction here
 
 p1 <- ggplot(snomed_over_time, aes(x = date, y = sum_out, col = term_fct)) + 
