@@ -7,6 +7,9 @@ library(arrow)
 
 source(here::here("analysis/functions/redaction.R"))
 
+# create folders to put plots in
+dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
+
 lc_first <- arrow::read_parquet(here("output/clean_dataset_lc_first.gz.parquet"))
 
 output_dir_tab <- here("output/tables")
