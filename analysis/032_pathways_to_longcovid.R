@@ -136,3 +136,60 @@ ggplot(sankey_plotv2,
   theme_ali() + 
   theme(legend.position = "top")
 dev.off()
+
+
+# compare distribution of folks with/without a +ve test --------------------
+table_data <- cleaned_data %>%
+  filter(lc_out == 1) %>% 
+  dplyr::select(
+    lc_out,
+    lc_dx_flag,
+    sex,
+    age_cat,
+    practice_nuts,
+    ethnicity,
+    imd_q5,
+    comorbidities,
+    no_prev_vacc,
+    all_test_positive,
+    test_positive_cat,
+    covid_hosp_cat
+  ) %>%
+  mutate(lc_cat = case_when(
+    all_test_positive > 0 & lc_out == 1 ~ "test +ve -> long COVID", 
+    all_test_positive == 0 & lc_out == 1 ~ "no test -> long COVID"
+  )) %>% 
+  dplyr::select(-lc_out, -all_test_positive)
+
+long_covid_demographics_by_test_status <- table_data %>% 
+  gtsummary::tbl_summary(
+    by = lc_cat,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p})"),
+    label = list(
+      "lc_dx_flag" ~ "Diagnosis or referral code",
+      "sex" ~ "Sex",
+      "age_cat" ~ "Age category",
+      "practice_nuts" ~ "Region",
+      "ethnicity" ~ "Ethnicity",
+      "imd_q5" ~ "IMD (quintile)",
+      "comorbidities" ~ "# comorbidities",
+      "no_prev_vacc" ~ "# vaccines",
+      "test_positive_cat" ~ "# positive tests",
+      "covid_hosp_cat" ~ "# COVID-19 hospitalisations"
+    )
+  ) %>% 
+  gtsummary::add_p()
+
+long_covid_demographics_by_test_status %>% 
+  as_gt() %>%
+  gt::gtsave(
+    filename = "tab_demographics_by_test_status.html",
+    path = fs::path(output_dir_tab)
+  )
+
+#TODO: add redaction
+long_covid_demographics_by_test_status_tbl <- long_covid_demographics_by_test_status$table_body %>% 
+  dplyr::select(-test_result)
+write.csv(long_covid_demographics_by_test_status_tbl, here::here("output/data_demographics_by_test_status.csv"))
