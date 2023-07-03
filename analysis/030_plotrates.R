@@ -16,10 +16,6 @@ dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 redact_threshold <- 10
 
 # import data ------------------------------------------------------------
-dt_daily <- readr::read_csv(here::here("output/data_daily_dynamics.csv"))
-dt_monthly <- readr::read_csv(here::here("output/data_monthly_dynamics.csv"))
-uk_gov_cases <- readr::read_csv(here::here("data/data_2023-Apr-27.csv"))
-
 time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_all.gz.parquet")) %>%
   rename(lc_out = out)
 time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_dx.gz.parquet")) %>%
@@ -55,14 +51,15 @@ summarise_records_by_month <- function(timedata_in, outcome_var){
     # select the important variables
     dplyr::select(patient_id, age_cat, sex, vaccines, outcome_date, outcome_binary) %>% 
     # get the week number and year from the date
-    mutate(week = isoweek(outcome_date),
-           year = year(outcome_date)) %>% 
+    mutate(week = lubridate::week(outcome_date),
+           year = lubridate::year(outcome_date)) %>% 
     # group and summarise weekly counts
     group_by(year, week, sex, vaccines) %>% 
     summarise(sum_out = sum(outcome_binary, na.rm = TRUE), .groups = "keep") %>% 
     # make a fake date variable for plotting purposes
     mutate(date = make_date(year, 1, 1) + (week*7))
 }
+
 timeseries_lc_all <- summarise_records_by_month(time_data_lc_all, lc_out) %>% 
   mutate(outcome = "long COVID")
 timeseries_lc_dx <- summarise_records_by_month(time_data_lc_dx, lc_dx) %>% 
@@ -139,12 +136,12 @@ if(max(p2c_data$redacted_out, na.rm = T) > 0){
   
   # plot column in a single panel
   p2b <- p2base +
-    geom_col(data = p2b_data, lwd = 0.2, lty = 1, col = "gray20") +
+    geom_col(data = p2b_data, lwd = 0.2, lty = 0) +
     theme(legend.position = "top")
   
   # plot 2x2 panel version of long covid by vaccine status over time
   p2c <- p2base +
-    geom_col(lwd = 0.2, lty = 1, col = "gray20") +
+    geom_col(lwd = 0.2, lty = 0) +
     facet_grid(sex~outcome)
 }else{
   p2b <- ggplot() + theme_void()
@@ -159,98 +156,6 @@ pdf(here("output/figures/fig2c_raw_counts_column_bysex.pdf"), width = 8, height 
   p2c
 dev.off()
 
-# Monthly dynamics plots --------------------------------------------------
-# incidence curves
-p4a <- ggplot(dt_monthly, aes(x = month_start_date)) +
-  geom_line(aes(y = (inc_first_lc*100), color = "long COVID"), lwd = 1) +
-  geom_line(aes(y = (inc_first_lc_dx*100), color = "long COVID Dx"), lwd = 1) +
-  geom_line(aes(y = (inc_hospitalised*100), color = "Hospitalised"), lwd = 1) +
-  labs(x = "Month", y = "Incidence (%)", 
-       colour = "COVID-19 outcome") +
-  guides(colour=guide_legend(nrow=2,byrow=TRUE)) +
-  scale_color_manual(values = cols) +
-  theme_ali() +
-  theme(legend.position = "bottom",
-        legend.box="vertical", 
-        legend.margin=margin())
-
-pdf(here("output/figures/fig4a_outbreak_dynamics.pdf"), width = 8, height = 6)
-  p4a
-dev.off()
-
-# cumulative incidence curves
-p4b <- ggplot(dt_monthly, aes(x = month_start_date)) +
-  geom_line(aes(y = cum_inc_first_lc*100, color = "long COVID"), lwd = 1) +
-  geom_line(aes(y = cum_inc_first_lc_dx*100, color = "long COVID Dx"), lwd = 1) +
-  geom_line(aes(y = cum_inc_hospitalised*100, color = "Hospitalised"), lwd = 1) +
-  labs(x = "Month", y = "Cumulative incidence (%)", colour = "COVID-19 outcome") +
-  scale_color_manual(values = cols) +
-  theme_ali() + 
-  theme(legend.position = "bottom")
-
-pdf(here("output/figures/fig4b_outbreak_dynamics_cumulative.pdf"), width = 8, height = 6)
-  p4b
-dev.off()
-
-# mix of cumulative and monthly incidence curves
-p4c <- ggplot(dt_monthly, aes(x = month_start_date)) +
-  geom_line(aes(y = cum_inc_first_lc*100, color = "long COVID"), lwd = 1) +
-  geom_line(aes(y = cum_inc_first_lc_dx*100, color = "long COVID Dx"), lwd = 1) +
-  geom_line(aes(y = inc_vacc*100, color = "1st vaccine dose"), lwd = 1) +
-  geom_line(aes(y = inc_tested*100, color = "Last test positive"), lwd = 1) +
-  labs(x = "Month", y = "Incidence (%)", 
-       colour = "COVID-19 outcome") +
-  scale_color_manual(values = cols) +
-  theme_ali() +
-  theme(legend.position = "bottom")
-
-pdf(here("output/figures/fig4c_outbreak_dynamics_experimental.pdf"), width = 8, height = 6)
-  p4c
-dev.off()
-
-# on log scale
-p4d <- ggplot(dt_monthly, aes(x = month_start_date)) +
-  geom_line(aes(y = log2(inc_first_lc), color = "long COVID"), lwd = 1) +
-  geom_line(aes(y = log2(inc_first_lc_dx), color = "long COVID Dx"), lwd = 1) +
-  geom_line(aes(y = log2(inc_tested), color = "Last test positive"), lwd = 1) +
-  labs(x = "Month", y = "log2(events)", colour = "COVID-19 outcome") +
-  scale_color_manual(values = cols) +
-  theme_ali() + 
-  theme(legend.position = "bottom")
-
-pdf(here("output/figures/fig4d_outbreak_dynamics_log.pdf"), width = 8, height = 6)
-  p4d +
-    geom_line(aes(y = log2(inc_hospitalised), color = "Hospitalised"), lwd = 1) +
-    geom_line(aes(y = log2(inc_vacc), color = "1st vaccine dose"), lwd = 1)
-dev.off()
-
-# compare long COVID dynamics to England data -----------------------------
-plot_uk_gov_cases <- uk_gov_cases %>% 
-  filter(date >= min(dt_monthly$month_start_date) & date <= max(dt_monthly$month_start_date)) %>% 
-  mutate(roll_mean = zoo::rollmean(newCasesBySpecimenDate, 7, na.pad = T))
-
-## make the plot using base R for dual-axes
-pdf(here("output/figures/fig4e_longcovid_and_national_cases.pdf"), width = 8, height = 6)
-par(mar=c(4,4,1,4))
-plot(
-  dt_monthly$month_start_date,
-  dt_monthly$cum_inc_first_lc*100,
-  type = "l",
-  col = cols[1],
-  ylab = "Cumulative incidence (%)",
-  xlab = "Date")
-lines(dt_monthly$month_start_date,
-      dt_monthly$cum_inc_first_lc_dx*100,
-      type = "l",
-      col = cols[2])
-par(new=T)
-plot(plot_uk_gov_cases$date, plot_uk_gov_cases$roll_mean, type = "l", col = 1, lwd = 2,
-     xaxt = "n", yaxt = "n", xlab = "", ylab = "")
-axis(side = 4)
-mtext("Positive cases in England (7-day average)", side = 4, padj = 4)
-legend("topleft", legend = c("long COVID", "long COVID Dx only", "Positive COVID-19 tests (Eng)"), lty = 1, col = c(cols[c(1:2)], 1))
-dev.off()
-
 # stacked bar chart for proportion Rx vs Dx -------------------------------
 stacked_bar <- timeseries_plot %>% 
   group_by(date, outcome) %>% 
@@ -258,7 +163,7 @@ stacked_bar <- timeseries_plot %>%
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
 p2e <- ggplot(stacked_bar, aes(fill=lc_dx, y=redacted_out, x=date)) + 
-  geom_bar(position="fill", stat="identity") +
+  geom_bar(position="fill", stat="identity", width = 99) +
   scale_fill_manual(values = lc_dx_cols) +
   labs(x = "Date", y = "Type of long COVID code", fill = "Rx or Dx code") +
   theme_ali() + 
@@ -271,43 +176,13 @@ dev.off()
 
 # put together the nice figure for the paper ------------------------------
 p2_full <- cowplot::plot_grid(
-  p2, p2b, p4a, p2e,
-  ncol = 2,
+  p2, p2b, p2e,
+  ncol = 1,
   labels = "AUTO"
   )
 
-pdf(here("output/figures/fig2_longcovid_dynamics.pdf"), width = 11, height = 8)
+pdf(here("output/figures/fig2_longcovid_dynamics.pdf"), width = 6, height = 10)
   p2_full
-dev.off()
-
-# daily dynamics  ---------------------------------------------------------
-pd <- position_dodge(width = 0.5)
-p4f1 <- ggplot(dt_daily, aes(x = date)) + 
-  geom_col(aes(y = n_first_lc, fill = "long COVID"), lwd = 1, position = pd) +
-  geom_col(aes(y = n_first_lc_dx, fill = "long COVID Dx"), lwd = 1, position = pd) +
-  labs(x = "Month", y = "Incidence (%)", 
-       colour = "COVID-19 outcome") +
-  guides(fill=guide_legend(nrow=1,byrow=TRUE)) +
-  scale_fill_manual(values = cols[1:2]) +
-  theme_ali() +
-  theme(legend.position = "bottom",
-        legend.box="vertical", 
-        legend.margin=margin())
-
-p4f2 <- ggplot(dt_daily, aes(x = date)) + 
-  geom_line(aes(y = (inc_first_lc*100), col = "long COVID")) +
-  geom_line(aes(y = (inc_first_lc_dx*100), col = "long COVID Dx")) +
-  labs(x = "Month", y = "Incidence (%)", 
-       colour = "COVID-19 outcome") +
-  guides(colour=guide_legend(nrow=1,byrow=TRUE)) +
-  scale_colour_manual(values = cols[1:2]) +
-  theme_ali() +
-  theme(legend.position = "bottom",
-        legend.box="vertical", 
-        legend.margin=margin())
-
-pdf(here("output/figures/fig4f_daily_cases.pdf"), width = 8, height = 10)
-  cowplot::plot_grid(p4f1, p4f2, ncol = 1)
 dev.off()
 
 # supplement - time gaps between vaccine doses  ---------------------------
