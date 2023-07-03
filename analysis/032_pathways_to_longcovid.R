@@ -193,3 +193,37 @@ long_covid_demographics_by_test_status %>%
 long_covid_demographics_by_test_status_tbl <- long_covid_demographics_by_test_status$table_body %>% 
   dplyr::select(-test_result)
 write.csv(long_covid_demographics_by_test_status_tbl, here::here("output/data_demographics_by_test_status.csv"))
+
+# repeat but separate by Dx or Rx code ------------------------------------
+long_covid_demographics_by_dx_rx <- table_data %>% 
+  gtsummary::tbl_summary(
+    by = lc_dx_flag,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p})"),
+    label = list(
+      "lc_cat" ~ "Test +ve before long COVID",
+      "sex" ~ "Sex",
+      "age_cat" ~ "Age category",
+      "practice_nuts" ~ "Region",
+      "ethnicity" ~ "Ethnicity",
+      "imd_q5" ~ "IMD (quintile)",
+      "comorbidities" ~ "# comorbidities",
+      "no_prev_vacc" ~ "# vaccines",
+      "test_positive_cat" ~ "# positive tests",
+      "covid_hosp_cat" ~ "# COVID-19 hospitalisations"
+    )
+  ) %>% 
+  gtsummary::add_p()
+
+long_covid_demographics_by_dx_rx %>% 
+  as_gt() %>%
+  gt::gtsave(
+    filename = "tab_demographics_by_dx_rx.html",
+    path = fs::path(output_dir_tab)
+  )
+
+#TODO: add redaction
+long_covid_demographics_by_dx_rx_tbl <- long_covid_demographics_by_dx_rx$table_body %>% 
+  dplyr::select(-test_result)
+write.csv(long_covid_demographics_by_dx_rx_tbl, here::here("output/data_demographics_by_dx_rx.csv"))
