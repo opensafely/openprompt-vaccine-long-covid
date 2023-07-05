@@ -162,9 +162,13 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
 }
 
 # # Crude RRs
-# pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 20, height = 20, onefile=FALSE)
-#   create_forest_plot(data_in = filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "0: wild/alpha")
-# dev.off()
+p_alpha <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "0: wild/alpha")
+p_delta <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "1: delta")
+p_omicron <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "2: omicron")
+
+pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 15, height = 15, onefile=FALSE)
+  cowplot::plot_grid(p_alpha, p_delta, p_omicron, ncol = 1)
+dev.off()
 
 # Adjusted RRs
 p_alpha <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "0: wild/alpha")
