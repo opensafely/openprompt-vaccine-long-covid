@@ -105,6 +105,7 @@ if(max(p2_data$redacted_out, na.rm = T) > 0){
   } # end 
 }else{
   p2 <- ggplot() + theme_void()
+  p2a <- ggplot() + theme_void()
 } # end 
 
 pdf(here("output/figures/fig2_raw_counts_line.pdf"), width = 8, height = 6)
