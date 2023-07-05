@@ -72,11 +72,11 @@ poisson_regressions <- function(cohort_data, stratifier) {
                 conf.high = 1)
     
       poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = variant_data, family = poisson(link = "log")))
-      crude_output <- convert_to_rates(poissonmodel_crude) %>% 
+      crude_output <- convert_to_rates(poissonmodel_crude) %>%
         bind_rows(intercept_data_to_add)
       poissonmodel_crude <- NULL
     
-      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = cohort_data, family = poisson(link = "log")))
+      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = variant_data, family = poisson(link = "log")))
       adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
         bind_rows(intercept_data_to_add)
       poissonmodel_adj <- NULL
