@@ -39,7 +39,6 @@ out2 <- c( mean(y2), var(y2) )
 out3 <- c( mean(y3), var(y3) )
 
 capture.output(
-  file = here::here("output/data_properties/poisson_checks.txt"),
   c("mean", "variance"),
   "Any long COVID",
   out1,
@@ -56,7 +55,8 @@ capture.output(
   "2 vaccine", 
   out2,
   "3+ vaccine", 
-  out3
+  out3,
+  file = here::here("output/data_properties/poisson_checks.txt")
 )
 
 # do the mean and var by all covariates -----------------------------------
@@ -64,8 +64,11 @@ conditional_poisson_check <- clean_data %>%
   group_by(sex, age_cat, no_prev_vacc) %>% 
   summarise(
     mu1 = mean(lc_out),
-    mu2 = mean(lc_dx_only),
     var1 = var(lc_out),
-    var2 = var(lc_dx_only)
-    )
+    mu2 = mean(lc_dx_only),
+    var2 = var(lc_dx_only),
+    .groups = "keep"
+    ) %>% 
+  ungroup() %>% 
+  mutate_if(is.numeric, ~signif(., digits = 3))
 write.csv(conditional_poisson_check, here::here("output/data_properties/conditional_poisson_check.csv"))
