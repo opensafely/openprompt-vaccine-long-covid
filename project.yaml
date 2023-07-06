@@ -211,6 +211,15 @@ actions:
         monthly_plot_v4: output/figures/fig4d_outbreak_dynamics_log.pdf
         monthly_plot_v5: output/figures/fig4e_longcovid_and_national_cases.pdf
 
+  poisson_checks:
+    run: >
+      r:latest
+        analysis/040_poisson_checks.R
+    needs: [clean_the_data]
+    outputs:
+      moderately_sensitive:
+        poissonchecks: output/data_properties/poisson_checks.txt
+        
   poisson_rates_timeupdated:
     run: >
       r:latest
