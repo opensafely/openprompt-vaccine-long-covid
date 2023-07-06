@@ -32,13 +32,14 @@ cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
 names(cols) <- outcome_list
 
 # plot rate ratios with table -----------------------------------------------------
+sigdig <- 2
 # bit of formatting so it all looks pretty in the plots
 full_rates <- adjusted_rates_out %>% 
   # just keep the useful data
   dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant) %>% 
   # convert the lovely estimates to lovely strings
-  mutate(textrate = sprintf("%0.1f", round(rate, digits = 1)),
-         textci = sprintf(paste0("(", round(conf.low, 1), "-", round(conf.high, 1), ")"))) %>% 
+  mutate(textrate = sprintf("%0.1f", signif(rate, sigdig)),
+         textci = sprintf(paste0("(", signif(conf.low, sigdig), "-", signif(conf.high, sigdig), ")"))) %>% 
   # get rid of the variable names as part of the term2 label
   mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_mrna|t_vacc_primary")) %>% 
   mutate_at(c("term2"), ~ifelse(str_detect(term2, "baseline"), paste0(".", term2), .)) %>% 
@@ -58,7 +59,7 @@ full_rates <- adjusted_rates_out %>%
     )
   )) %>% 
   # filter so just the stratifier results are shown (not the age, and sex coefficients)
-  filter(plot_marker) 
+  filter(plot_marker)
 
 suppress_labs <- function(string) {
   rep("", length(string))
@@ -94,7 +95,7 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
       space = "free_y",
       switch = "y"
     ) +
-    labs(x = NULL, y = NULL) +
+    labs(x = NULL, y = NULL, title = "") +
     theme_classic() +
     theme(
       strip.background = element_blank(),
@@ -111,22 +112,21 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
   
   pd <- position_dodge(2)
   
-  rr_forest <- ggplot(data = data_in,
-                      aes(
-                        x = term2,
-                        y = rate,
-                        ymin = conf.low,
-                        ymax = conf.high,
-                        group = get(y_col_var),
-                        colour = get(y_col_var)
-                      )) +
+  rr_forest <- data_in %>% 
+    filter(covid_variant == eval(variant)) %>% 
+    ggplot(
+      aes(x = term2,
+          y = rate,
+          ymin = conf.low,
+          ymax = conf.high,
+          group = get(y_col_var),
+          colour = get(y_col_var))) +
     geom_hline(yintercept = 1, colour = "gray60") +
     geom_pointrange(size = 1.8, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
     #geom_point(position = position_dodge(width = 0.5)) +
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",
-         colour = "",
-         title = eval(variant)) +
+         colour = eval(variant)) +
     facet_grid(
       strat_var ~ " ",
       scales = "free",
@@ -135,8 +135,8 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
                           term2 = suppress_labs)
     ) +
     scale_color_manual(values = cols) +
-    scale_y_log10(breaks = c(0.2, 0.33, 0.5, 1.0, 2.0, 3.0, 5),
-                  limits = c(0.2, 6),
+    scale_y_log10(breaks = c(0.1, 0.2, 0.33, 0.5, 1.0, 2.0, 3.0, 5, 10),
+                  limits = c(0.1, 10),
                   minor_breaks = NULL) +
     theme_classic() +
     theme(
@@ -147,6 +147,7 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
       strip.placement = "outside",
       panel.border = element_rect(fill = NA, color = "black"),
       legend.position = legend_position,
+      legend.title = element_text(face = "bold", size = 10),
       axis.text.x = element_text(face = "bold"),
       axis.text.y = element_blank(),
       axis.title = element_text(size = 10, face = "bold"),

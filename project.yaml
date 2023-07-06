@@ -227,7 +227,7 @@ actions:
     needs: [poisson_rates_timeupdated]
     outputs: 
       moderately_sensitive: 
-        #fig3a: output/figures/fig3a_crude_RRs.pdf
+        fig3a: output/figures/fig3a_crude_RRs.pdf
         fig3b: output/figures/fig3b_adjusted_RRs.pdf
         #fig3c: output/figures/fig3c_longcovid_RRs.pdf
         #fig3d: output/figures/fig3d_longcovid_models.pdf
