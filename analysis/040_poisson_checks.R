@@ -6,6 +6,8 @@ library(here)
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/poisson_regressions.R"))
 
+dir.create(here::here("output/data_properties"), showWarnings = FALSE, recursive=TRUE)
+
 ## import clean flat data
 clean_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet")) %>% 
   dplyr::select(patient_id, starts_with("pt"), age, sex, lc_out, lc_dx_only, no_prev_vacc)
