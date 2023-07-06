@@ -219,6 +219,7 @@ actions:
     outputs:
       moderately_sensitive:
         poissonchecks: output/data_properties/poisson_checks.txt
+        conditional_poisson_check: output/data_properties/conditional_poisson_check.csv
         
   poisson_rates_timeupdated:
     run: >

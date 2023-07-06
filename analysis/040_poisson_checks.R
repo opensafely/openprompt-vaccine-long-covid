@@ -10,7 +10,7 @@ dir.create(here::here("output/data_properties"), showWarnings = FALSE, recursive
 
 ## import clean flat data
 clean_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet")) %>% 
-  dplyr::select(patient_id, starts_with("pt"), age, sex, lc_out, lc_dx_only, no_prev_vacc)
+  dplyr::select(patient_id, starts_with("pt"), age, age_cat, sex, lc_out, lc_dx_only, no_prev_vacc)
 
 y <- clean_data$lc_out
 z <- clean_data$lc_dx_only
@@ -58,3 +58,14 @@ capture.output(
   "3+ vaccine", 
   out3
 )
+
+# do the mean and var by all covariates -----------------------------------
+conditional_poisson_check <- clean_data %>% 
+  group_by(sex, age_cat, no_prev_vacc) %>% 
+  summarise(
+    mu1 = mean(lc_out),
+    mu2 = mean(lc_dx_only),
+    var1 = var(lc_out),
+    var2 = var(lc_dx_only)
+    )
+write.csv(conditional_poisson_check, here::here("output/data_properties/conditional_poisson_check.csv"))
