@@ -39,23 +39,25 @@ out2 <- c( mean(y2), var(y2) )
 out3 <- c( mean(y3), var(y3) )
 
 capture.output(
-  c("mean", "variance"),
-  "Any long COVID",
-  out1,
-  "Long COVID dx",
-  out2,
-  "Females",
-  outf,
-  "Males",
-  outm, 
-  "0 vaccine", 
-  out0,
-  "1 vaccine", 
-  out1,
-  "2 vaccine", 
-  out2,
-  "3+ vaccine", 
-  out3,
+  cat(
+    c("mean", "variance"),"\n",
+    "Any long COVID","\n",
+    out1,"\n",
+    "Long COVID dx","\n",
+    out2,"\n",
+    "Females","\n",
+    outf,"\n",
+    "Males","\n",
+    outm, "\n",
+    "0 vaccine", "\n",
+    out0,"\n",
+    "1 vaccine", "\n",
+    out1,"\n",
+    "2 vaccine", "\n",
+    out2,"\n",
+    "3+ vaccine", "\n",
+    out3
+  ),
   file = here::here("output/data_properties/poisson_checks.txt")
 )
 
