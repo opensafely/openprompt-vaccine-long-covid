@@ -16,7 +16,6 @@ stratifiers_t <-
     "sex",
     "age_cat",
     "vaccines",
-    "t_vacc_primary",
     "t_vacc_mrna"
   )
 
@@ -25,7 +24,6 @@ strat_plot_names_t <-
     "Sex",
     "Age category",
     "No. vaccine doses",
-    "First vaccine received",
     "mRNA vaccine received"
   )
 
@@ -35,25 +33,46 @@ vars_for_regressions <- c("patient_id",
                           "age_cat", 
                           "age_centred", 
                           "vaccines", 
-                          "t_vacc_primary", 
                           "t_vacc_mrna", 
                           "variant",
                           "out")
 # import data ------------------------------------------------------------
-## All Long COVID codes as outcome
-time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_all.gz.parquet")) %>% 
-  dplyr::select(all_of(vars_for_regressions))
+
+## import clean_Data to get the region data
+clean_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet")) %>% 
+  dplyr::select(patient_id, region = practice_nuts)
+
+## 1 - import All Long COVID codes as outcome - merge on region
+time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_all.gz.parquet")) %>%
+  dplyr::select(all_of(vars_for_regressions)) %>% 
+  left_join(clean_data, by = "patient_id")
+
+## run the regressions
 adjusted_rates_t_lc_all <- run_the_regressions(data = time_data_lc_all)
+
+## remove the big time-data frame to save memory
 time_data_lc_all <- NULL
 
-## Long COVID Dx codes only as outcome
-time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_dx.gz.parquet"))
+## 2 - import Long COVID Dx codes only as outcome - merge on region
+time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_dx.gz.parquet")) %>%
+  dplyr::select(all_of(vars_for_regressions)) %>% 
+  left_join(clean_data, by = "patient_id")
+
+## run the regressions
 adjusted_rates_t_lc_dx <- run_the_regressions(data = time_data_lc_dx)
+
+## remove the big time-data frame to save memory
 time_data_lc_dx <- NULL
 
-## Hospitalised with COVID-19 as outcome
-time_data_covidhosp <- arrow::read_parquet(here::here("output/timeupdate_dataset_covidhosp.gz.parquet"))
+## 3 - Hospitalised with COVID-19 as outcome - merge on region
+time_data_covidhosp <- arrow::read_parquet(here::here("output/timeupdate_dataset_covidhosp.gz.parquet")) %>%
+  dplyr::select(all_of(vars_for_regressions)) %>% 
+  left_join(clean_data, by = "patient_id")
+
+## run the regressions
 adjusted_rates_t_covidhosp <- run_the_regressions(data = time_data_covidhosp)
+
+## remove the big time-data frame to save memory
 time_data_covidhosp <- NULL
 
 # group the outcomes ------------------------------------------------------

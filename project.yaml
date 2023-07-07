@@ -229,7 +229,7 @@ actions:
     run: >
       r:latest
         analysis/041_poisson_regressions_timeupdated.R
-    needs: [time_update_data]
+    needs: [clean_the_data, time_update_data]
     outputs:
       moderately_sensitive:
         poissonrates: output/tab023_poissonrates_timeupdated.csv

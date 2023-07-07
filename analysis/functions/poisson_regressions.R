@@ -14,14 +14,14 @@ poisson_regressions <- function(cohort_data, stratifier) {
   
   if (number_levels > 1) {
     fm1 <- formula(paste("out ~ offset(log(t/1e5)) + ", stratifier))
-    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred + sex")
+    fm2a <- paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_cat + sex + region")
     
     # need to avoid duplication in fm2 in case age_cat or sex is the primary stratifier:
     fm2b <- ifelse(str_detect(stratifier, "age"), 
-                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex"),
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ sex + region"),
                   fm2a)
     fm2 <- ifelse(str_detect(stratifier, "sex"), 
-                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_centred"),
+                  paste("out ~ offset(log(t/1e5)) + ", stratifier, "+ age_cat + region"),
                   fm2b) %>% as.formula()
     
     # remove a lot of the memory intensive fat from the model object but keep necessary bits to predict rates
@@ -52,7 +52,18 @@ poisson_regressions <- function(cohort_data, stratifier) {
     
     stratifier_output <- NULL
     for(variant in levels(cohort_data$variant)){
+      ## subset to one covid variatnt period
       variant_data <- cohort_data[cohort_data$variant == variant, ]
+      
+      # grab all the covariates for this stratifier (except the count and follow up time which we'll summarise)
+      covars <- all.vars(fm2)[!all.vars(fm2) %in% c("out", "t")]
+      
+      # group by covariates and sum the count of events and fup-time in each stratum
+      dt_variant <- data.table::setDT(variant_data)
+      
+      dt_variant <- dt_variant[, .(out=sum(out), t=sum(t)),
+                 by=covars]
+      #data.table::setorderv(dt_variant, covars)
       
       # get level for the intercept term
       stratifier_intercept <- paste0(stratifier, 
@@ -71,12 +82,12 @@ poisson_regressions <- function(cohort_data, stratifier) {
                 conf.low = 1, 
                 conf.high = 1)
     
-      poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = variant_data, family = poisson(link = "log")))
+      poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = dt_variant, family = poisson(link = "log")))
       crude_output <- convert_to_rates(poissonmodel_crude) %>%
         bind_rows(intercept_data_to_add)
       poissonmodel_crude <- NULL
     
-      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = variant_data, family = poisson(link = "log")))
+      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = dt_variant, family = poisson(link = "log")))
       adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
         bind_rows(intercept_data_to_add)
       poissonmodel_adj <- NULL
