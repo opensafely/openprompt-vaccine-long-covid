@@ -215,11 +215,15 @@ actions:
     run: >
       r:latest
         analysis/040_poisson_checks.R
-    needs: [clean_the_data]
+    needs: [clean_the_data, time_update_data]
     outputs:
       moderately_sensitive:
-        poissonchecks: output/data_properties/poisson_checks.txt
-        conditional_poisson_check: output/data_properties/conditional_poisson_check.csv
+        clean_poissonchecks: output/data_properties/poisson_checks/clean_data_poisson_checks.txt
+        clean_conditional_poisson_check: output/data_properties/poisson_checks/clean_data_poisson_checks.csv
+        tup1_poissonchecks: output/data_properties/poisson_checks/time_data_lc_dx_poisson_checks.txt
+        tup1_conditional_poisson_check: output/data_properties/poisson_checks/time_data_lc_dx_poisson_checks.csv
+        tup2_poissonchecks: output/data_properties/poisson_checks/time_data_lc_first_poisson_checks.txt
+        tup2_conditional_poisson_check: output/data_properties/poisson_checks/time_data_lc_first_poisson_checks.csv
         
   poisson_rates_timeupdated:
     run: >
