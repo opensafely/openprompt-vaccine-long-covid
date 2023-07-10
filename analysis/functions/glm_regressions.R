@@ -1,10 +1,10 @@
-#' Run Poisson regressions for Long COVID
+#' Run GLM regressions for Long COVID
 #' @description Run crude and age/sex-adjusted Poisson regression, tidy the output and add names of model, outcome and analysis.
 #' @param cohort_data A list containing a dataset for a specified outcome and analysis.
 #' @param stratifier The stratifying variable (e.g., vaccine doses, IMD)
 #' @return A dataframe containing results from both models.
 
-poisson_regressions <- function(cohort_data, stratifier) {
+glm_regressions <- function(cohort_data, stratifier) {
   print(stratifier)
   
   number_levels <- cohort_data %>%
@@ -63,7 +63,6 @@ poisson_regressions <- function(cohort_data, stratifier) {
       
       dt_variant <- dt_variant[, .(out=sum(out), t=sum(t)),
                  by=covars]
-      #data.table::setorderv(dt_variant, covars)
       
       # get level for the intercept term
       stratifier_intercept <- paste0(stratifier, 
@@ -81,17 +80,29 @@ poisson_regressions <- function(cohort_data, stratifier) {
                 rate = 1,
                 conf.low = 1, 
                 conf.high = 1)
-    
-      poissonmodel_crude <- shrink_glm_mem(glm(fm1, data = dt_variant, family = poisson(link = "log")))
-      crude_output <- convert_to_rates(poissonmodel_crude) %>%
+      
+      glm_model_crude <- shrink_glm_mem(MASS::glm.nb(fm1, data = dt_variant))
+      crude_output <- convert_to_rates(glm_model_crude) %>%
         bind_rows(intercept_data_to_add)
-      poissonmodel_crude <- NULL
+      glm_model_crude <- NULL
     
-      poissonmodel_adj <- shrink_glm_mem(glm(fm2, data = dt_variant, family = poisson(link = "log")))
-      adjusted_output <- convert_to_rates(poissonmodel_adj) %>% 
+      glm_model_adj <- shrink_glm_mem(MASS::glm.nb(fm2, data = dt_variant))
+      adjusted_output <- convert_to_rates(glm_model_adj) %>% 
         bind_rows(intercept_data_to_add)
-      poissonmodel_adj <- NULL
-    
+      glm_model_adj <- NULL
+      
+      ## get number of events and p-years "at risk" in each stratified level
+      ## melt into long format so each observation will be repeated by each of `covars`
+      dt_variant_melt <- data.table::melt(dt_variant, measure.vars = covars)
+      
+      ## for each of `covars` calculated the sum of `out` and `t`
+      dt_summ_by_covars <- dt_variant_melt[, lapply(.SD, sum, na.rm = TRUE), by = c("variable", "value"), .SDcols=c("out", "t")]
+      
+      ## merge together the variable and value column to merge onto the Model outputs
+      dt_summ_by_covars$merge_var <- paste0(dt_summ_by_covars$variable, dt_summ_by_covars$value)
+      dt_summ_by_covars$variable <- NULL
+      dt_summ_by_covars$value <- NULL
+      
       stratifier_by_variant <- bind_rows(
         mutate(crude_output, model = "crude"),
         mutate(adjusted_output, model = "adjusted"),
@@ -99,7 +110,10 @@ poisson_regressions <- function(cohort_data, stratifier) {
         mutate(plot_marker = stringr::str_detect(term, stratifier),
                var = stratifier,
                baseline = stratifier_intercept,
-               covid_variant = variant)
+               covid_variant = variant) %>% 
+        left_join(dt_summ_by_covars, by = c("term"="merge_var")) %>% 
+        dplyr::select(term, out, t, everything())
+      
       stratifier_output <- bind_rows(stratifier_output,
                                      stratifier_by_variant)
     }
