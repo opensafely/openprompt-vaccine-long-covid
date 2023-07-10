@@ -112,7 +112,7 @@ poisson_hist <- function(DT, stratifier){
                 rgb(0,0.2,0.5, alpha = 0.4),
                 rgb(0.8,0.5,0.2, alpha = 0.4))
   
-  dt_summ <- dt_poisson[, .(out=sum(out), t=sum(t)),
+  dt_summ <- DT[, .(out=sum(out), t=sum(t)),
      by = c(stratifier, "age_cat", "sex", "region")]
   
   hist(dt_summ$out, breaks = 20,
