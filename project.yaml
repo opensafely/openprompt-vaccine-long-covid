@@ -224,6 +224,7 @@ actions:
         tup1_conditional_poisson_check: output/data_properties/poisson_checks/time_data_lc_dx_poisson_checks.csv
         tup2_poissonchecks: output/data_properties/poisson_checks/time_data_lc_first_poisson_checks.txt
         tup2_conditional_poisson_check: output/data_properties/poisson_checks/time_data_lc_first_poisson_checks.csv
+        poisson_hist: output/data_properties/poisson_checks/poisson_hist.pdf
         
   poisson_rates_timeupdated:
     run: >
