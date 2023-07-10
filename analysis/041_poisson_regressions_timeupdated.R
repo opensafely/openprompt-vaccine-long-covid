@@ -1,14 +1,15 @@
-library(tidyverse)
+library(MASS)
 library(broom)
 library(lubridate)
 library(here)
+library(tidyverse)
 
 source(here::here("analysis/functions/redaction.R"))
-source(here::here("analysis/functions/poisson_regressions.R"))
+source(here::here("analysis/functions/glm_regressions.R"))
 
 # add simple poisson regression results -----------------------------------
 run_the_regressions <- function(data){
-  map(stratifiers_t, ~poisson_regressions(cohort_data = data, .x))
+  map(stratifiers_t, ~glm_regressions(cohort_data = data, .x))
 }
 
 stratifiers_t <-

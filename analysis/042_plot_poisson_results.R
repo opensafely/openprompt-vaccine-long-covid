@@ -122,7 +122,7 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
           group = get(y_col_var),
           colour = get(y_col_var))) +
     geom_hline(yintercept = 1, colour = "gray60") +
-    geom_pointrange(size = 1.8, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
+    geom_pointrange(size = 1.3, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
     #geom_point(position = position_dodge(width = 0.5)) +
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",
@@ -159,7 +159,7 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     ) +
     coord_flip()
   
-  ggarrange(rr_tab, rr_forest, ncol = 2, nrow=1, common.legend = T, legend = "bottom", widths = plot_rel_widths)
+  ggarrange(rr_tab, rr_forest, ncol = 2, nrow=1, common.legend = T, legend = "top", widths = plot_rel_widths)
 }
 
 # # Crude RRs
