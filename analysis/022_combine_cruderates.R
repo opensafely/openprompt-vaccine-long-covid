@@ -105,6 +105,8 @@ redacted_crude_rates %>%
 
 # make a nice plot of the crude rates  ------------------------------------
 plot_crude_rates <- tidy_crude_rates %>% 
+  # filter missing data from the plot
+  filter(!is.na(level)) %>% 
   dplyr::select(stratifier,
                 level, 
                 n, 
