@@ -4,7 +4,7 @@
 #' @param outcome_var A date variable with the date of the Outcome event
 #' @return A dataframe containing time updated data 
 
-time_update_vaccinedoses <- function(data, outcome_var){
+time_update_vaccinedoses <- function(data, outcome_var, exclude_recent_vacc = FALSE, exclusion_window = 0){
   # remove anyone who starts and ends on the same date 
   # need to redefine the participant end date because the outcome date may be different to Any Long COVID date (used in data builder) 
   #e.g., may have a fracture before/after Long COVID so need to update end date
@@ -34,6 +34,13 @@ time_update_vaccinedoses <- function(data, outcome_var){
   
   # save some memory space
   data <- NULL 
+  
+  # amend the vaccine data if it's < 12 weeks before the end of the study
+  if(exclude_recent_vacc) {
+    small_base$vaccine_dose_1_date[small_base$vaccine_dose_1_date > (small_base$pt_end_date - exclusion_window)] <- NA
+    small_base$vaccine_dose_2_date[small_base$vaccine_dose_2_date > (small_base$pt_end_date - exclusion_window)] <- NA
+    small_base$vaccine_dose_3_date[small_base$vaccine_dose_3_date > (small_base$pt_end_date - exclusion_window)] <- NA
+  }
   
   small_base_cases <- small_base %>% 
     filter(outcome_binary == 1) %>%
