@@ -159,25 +159,27 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     ) +
     coord_flip()
   
-  ggarrange(rr_tab, rr_forest, ncol = 2, nrow=1, common.legend = T, legend = "top", widths = plot_rel_widths)
+  ggarrange(rr_tab, rr_forest, ncol = 2, nrow=1, common.legend = T, legend = "right", widths = plot_rel_widths)
 }
 
 # # Crude RRs
 p_alpha <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "0: wild/alpha")
 p_delta <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "1: delta")
 p_omicron <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "2: omicron")
+p_all <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "All")
 
-pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 15, height = 15, onefile=FALSE)
-  cowplot::plot_grid(p_alpha, p_delta, p_omicron, ncol = 1)
+pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 16, height = 12, onefile=FALSE)
+  cowplot::plot_grid(p_alpha, p_delta, p_omicron, p_all, ncol = 1)
 dev.off()
 
 # Adjusted RRs
 p_alpha <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "0: wild/alpha")
 p_delta <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "1: delta")
 p_omicron <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "2: omicron")
+p_all <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "All")
 
-pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 15, height = 15, onefile=FALSE)
-  cowplot::plot_grid(p_alpha, p_delta, p_omicron, ncol = 1)
+pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 16, height = 12, onefile=FALSE)
+  cowplot::plot_grid(p_alpha, p_delta, p_omicron, p_all, ncol = 1)
 dev.off()
 # 
 # # Long COVID adjusted outcomes only
@@ -196,9 +198,10 @@ dev.off()
 p_alpha <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "0: wild/alpha")
 p_delta <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "1: delta")
 p_omicron <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "2: omicron")
+p_all <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "All")
 
-pdf(here("output/figures/fig3e_vaccines.pdf"), width = 15, height = 15, onefile=FALSE)
-  cowplot::plot_grid(p_alpha, p_delta, p_omicron, ncol = 1)
+pdf(here("output/figures/fig3e_vaccines.pdf"), width = 16, height = 12, onefile=FALSE)
+  cowplot::plot_grid(p_alpha, p_delta, p_omicron, p_all, ncol = 1)
 dev.off()
 
 # vaccines and long covid focuse

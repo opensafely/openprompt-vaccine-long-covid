@@ -7,9 +7,16 @@ library(tidyverse)
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/glm_regressions.R"))
 
+fs::dir_create(here::here("output/regression_outputs/"))
+
 # add simple poisson regression results -----------------------------------
 run_the_regressions <- function(data){
   map(stratifiers_t, ~glm_regressions(cohort_data = data, .x))
+}
+
+# run the regressions collapsed over variant
+run_the_regressions_collapsed <- function(data){
+  map(stratifiers_t, ~glm_regressions(cohort_data = data, .x, collapse_variant = TRUE))
 }
 
 stratifiers_t <-
@@ -48,8 +55,12 @@ time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc
   dplyr::select(all_of(vars_for_regressions)) %>% 
   left_join(clean_data, by = "patient_id")
 
+
+
 ## run the regressions
 adjusted_rates_t_lc_all <- run_the_regressions(data = time_data_lc_all)
+# and collapsed over variant period
+adjusted_rates_t_lc_all_collapsed <- run_the_regressions_collapsed(data = time_data_lc_all)
 
 ## remove the big time-data frame to save memory
 time_data_lc_all <- NULL
@@ -61,6 +72,8 @@ time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_
 
 ## run the regressions
 adjusted_rates_t_lc_dx <- run_the_regressions(data = time_data_lc_dx)
+# and collapsed over variant period
+adjusted_rates_t_lc_dx_collapsed <- run_the_regressions_collapsed(data = time_data_lc_dx)
 
 ## remove the big time-data frame to save memory
 time_data_lc_dx <- NULL
@@ -72,6 +85,8 @@ time_data_covidhosp <- arrow::read_parquet(here::here("output/timeupdate_dataset
 
 ## run the regressions
 adjusted_rates_t_covidhosp <- run_the_regressions(data = time_data_covidhosp)
+# and collapsed over variant period
+adjusted_rates_t_covidhosp_collapsed <- run_the_regressions_collapsed(data = time_data_covidhosp)
 
 ## remove the big time-data frame to save memory
 time_data_covidhosp <- NULL
@@ -80,11 +95,19 @@ time_data_covidhosp <- NULL
 adjusted_rates_out <- NULL
 adjusted_rates_list <- c("adjusted_rates_t_lc_all",
                          "adjusted_rates_t_lc_dx",
-                         "adjusted_rates_t_covidhosp")
+                         "adjusted_rates_t_covidhosp",
+                         "adjusted_rates_t_lc_all_collapsed",
+                         "adjusted_rates_t_lc_dx_collapsed",
+                         "adjusted_rates_t_covidhosp_collapsed"
+                         )
 outcome_list <- c("All Long COVID", 
                   "Long COVID diagnoses", 
-                  "COVID-19 hospitalisation")
-for(j in 1:3){
+                  "COVID-19 hospitalisation",
+                  "All Long COVID",
+                  "Long COVID diagnoses",
+                  "COVID-19 hospitalisation"
+                  )
+for(j in 1:length(adjusted_rates_list)){
   adjusted_rates_temp <- bind_rows(get(adjusted_rates_list[j]))
   outcome_name <- outcome_list[j]
   adjusted_rates_out <- bind_rows(
@@ -102,3 +125,7 @@ adjusted_rates_out <- adjusted_rates_out %>%
 
 adjusted_rates_out %>%
   write_csv(here("output/tab023_poissonrates_timeupdated.csv"))
+
+
+adjusted_rates_out %>% 
+  filter(str_detect(term, "vaccine"), model == "adjusted", !str_detect(term, "baseline"), outcome == "Long COVID diagnoses")
