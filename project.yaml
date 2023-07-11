@@ -234,7 +234,11 @@ actions:
     outputs:
       moderately_sensitive:
         poissonrates: output/tab023_poissonrates_timeupdated.csv
-
+        model_outputs1: output/regression_outputs/model_out_age_cat.txt
+        model_outputs2: output/regression_outputs/model_out_sex.txt
+        model_outputs3: output/regression_outputs/model_out_t_vacc_mrna.txt
+        model_outputs4: output/regression_outputs/model_out_vaccines.txt
+ 
   poisson_plots:
     run: >
       r:latest
@@ -244,11 +248,39 @@ actions:
       moderately_sensitive: 
         fig3a: output/figures/fig3a_crude_RRs.pdf
         fig3b: output/figures/fig3b_adjusted_RRs.pdf
-        #fig3c: output/figures/fig3c_longcovid_RRs.pdf
-        #fig3d: output/figures/fig3d_longcovid_models.pdf
         fig3e: output/figures/fig3e_vaccines.pdf
-        #fig3f: output/figures/fig3f_longcovid_vaccine_models.pdf
-        #fig3g: output/figures/fig3g_demographics.pdf
-        #poissonplots_all: output/figures/fig3h_rate_ratios_facet.pdf
         poissonplots_table: output/tables/tab4_poisson_rateratios.csv
 
+
+## Sensitivity analyses
+  time_update_sensAnalysis: 
+    run: >
+      r:latest
+        analysis/015_timeupdate_data_sensAnalysis.R
+    needs: [clean_the_data]
+    outputs: 
+      highly_sensitive: 
+        timedata_longcovid_sensAnalysis: output/timeupdate_dataset_lc_all_sensAnalysis.gz.parquet
+        timedata_longcovid_dx_sensAnalysis: output/timeupdate_dataset_lc_dx_sensAnalysis.gz.parquet
+        timedata_covid_hosp_sensAnalysis: output/timeupdate_dataset_covidhosp_sensAnalysis.gz.parquet
+  
+  poisson_rates_timeupdated_sensAnalysis:
+    run: >
+      r:latest
+        analysis/043_poisson_regressions_timeupdated_sensAnalysis.R
+    needs: [clean_the_data, time_update_sensAnalysis]
+    outputs:
+      moderately_sensitive:
+        poissonrates: output/tab023_poissonrates_timeupdated_sensAnalysis.csv
+
+  poisson_plots_sensAnalysis:
+    run: >
+      r:latest
+        analysis/044_plot_poisson_results_sensAnalyses.R
+    needs: [poisson_rates_timeupdated_sensAnalysis]
+    outputs: 
+      moderately_sensitive: 
+        fig3a_sensAnalyses: output/figures/fig3a_crude_RRs_sensAnalysis.pdf
+        fig3b_sensAnalyses: output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf
+        fig3e_sensAnalyses: output/figures/fig3e_vaccines_sensAnalysis.pdf
+        poissonplots_table_sensAnalyses: output/tables/tab4_poisson_rateratios_sensAnalysis.csv
