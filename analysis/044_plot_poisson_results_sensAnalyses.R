@@ -37,7 +37,7 @@ sigdig <- 2
 # bit of formatting so it all looks pretty in the plots
 full_rates <- adjusted_rates_out %>% 
   # just keep the useful data
-  dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant) %>% 
+  dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant, sa) %>% 
   # convert the lovely estimates to lovely strings
   mutate(textrate = sprintf("%0.1f", signif(rate, sigdig)),
          textci = sprintf(paste0("(", signif(conf.low, sigdig), "-", signif(conf.high, sigdig), ")"))) %>% 
@@ -127,7 +127,8 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     #geom_point(position = position_dodge(width = 0.5)) +
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",
-         colour = eval(variant)) +
+         colour = eval(variant),
+         title = "") +
     facet_grid(
       strat_var ~ " ",
       scales = "free",
@@ -164,24 +165,29 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
 }
 
 # # Crude RRs
-p_all <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "All")
+p_4wks <- create_forest_plot(filter(full_rates, model == "crude", sa == "4 weeks"), y_col_var = "outcome", variant = "All")
+p_12wks <- create_forest_plot(filter(full_rates, model == "crude", sa == "12 weeks"), y_col_var = "outcome", variant = "All")
+
+#TODO: need to add the 2weeks excluion plot. But best compared to the main estimates
 
 pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 16, height = 12, onefile=FALSE)
-cowplot::plot_grid(p_all, ncol = 1)
+  cowplot::plot_grid(p_12wks, p_4wks, ncol = 1, labels = c("12 weeks excl.", "4 weeks excl."))
 dev.off()
 
 # Adjusted RRs
-p_all <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "All")
+p_4wks <- create_forest_plot(filter(full_rates, model == "adjusted", sa == "4 weeks"), y_col_var = "outcome", variant = "All")
+p_12wks <- create_forest_plot(filter(full_rates, model == "adjusted", sa == "12 weeks"), y_col_var = "outcome", variant = "All")
 
 pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 16, height = 12, onefile=FALSE)
-cowplot::plot_grid(p_all, ncol = 1)
+cowplot::plot_grid(p_12wks, p_4wks, ncol = 1, labels = c("12 weeks excl.", "4 weeks excl."))
 dev.off()
 
 # Focus on vaccines
-p_all <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "All")
+p_4wks <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted", sa == "4 weeks"), y_col_var = "outcome", variant = "All")
+p_12wks <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted", sa == "12 weeks"), y_col_var = "outcome", variant = "All")
 
 pdf(here("output/figures/fig3e_vaccines_sensAnalysis.pdf"), width = 16, height = 12, onefile=FALSE)
-cowplot::plot_grid(p_all, ncol = 1)
+  cowplot::plot_grid(p_12wks, p_4wks, ncol = 1, labels = c("12 weeks excl.", "4 weeks excl."))
 dev.off()
 
 # Make a nice table of the results ----------------------------------------
@@ -194,12 +200,13 @@ output_poisson_rates <- full_rates %>%
     level = term2, 
     model, 
     outcome,
+    sa,
     rr = textrate, 
     ci = textci
   ) %>% 
   pivot_wider(names_from = "outcome",
               values_from = c("rr", "ci")) %>% 
-  dplyr::select(variant, variable, level, model, 
+  dplyr::select(variant, variable, level, model, sa,
                 rr_all_long_covid, 
                 ci_all_long_covid,
                 rr_long_covid_diagnoses, 
