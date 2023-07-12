@@ -259,9 +259,11 @@ actions:
     needs: [clean_the_data]
     outputs: 
       highly_sensitive: 
-        timedata_longcovid_sensAnalysis: output/timeupdate_dataset_lc_all_sensAnalysis.gz.parquet
-        timedata_longcovid_dx_sensAnalysis: output/timeupdate_dataset_lc_dx_sensAnalysis.gz.parquet
-        timedata_covid_hosp_sensAnalysis: output/timeupdate_dataset_covidhosp_sensAnalysis.gz.parquet
+        timedata_longcovid_sensAnalysis_12wks: output/timeupdate_dataset_lc_all_sensAnalysis_12wks.gz.parquet
+        timedata_longcovid_sensAnalysis_4wks: output/timeupdate_dataset_lc_all_sensAnalysis_4wks.gz.parquet
+        timedata_longcovid_dx_sensAnalysis_12wks: output/timeupdate_dataset_lc_dx_sensAnalysis_12wks.gz.parquet
+        timedata_longcovid_dx_sensAnalysis_4wks: output/timeupdate_dataset_lc_dx_sensAnalysis_4wks.gz.parquet
+        timedata_covid_hosp_sensAnalysis_2wks: output/timeupdate_dataset_covidhosp_sensAnalysis_2wks.gz.parquet
   
   poisson_rates_timeupdated_sensAnalysis:
     run: >
