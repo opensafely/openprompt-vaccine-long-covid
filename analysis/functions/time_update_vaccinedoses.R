@@ -35,13 +35,6 @@ time_update_vaccinedoses <- function(data, outcome_var, exclude_recent_vacc = FA
   # save some memory space
   data <- NULL 
   
-  # amend the vaccine data if it's < 12 weeks before the end of the study
-  if(exclude_recent_vacc) {
-    small_base$vaccine_dose_1_date[small_base$vaccine_dose_1_date > (small_base$pt_end_date - exclusion_window)] <- NA
-    small_base$vaccine_dose_2_date[small_base$vaccine_dose_2_date > (small_base$pt_end_date - exclusion_window)] <- NA
-    small_base$vaccine_dose_3_date[small_base$vaccine_dose_3_date > (small_base$pt_end_date - exclusion_window)] <- NA
-  }
-  
   small_base_cases <- small_base %>% 
     filter(outcome_binary == 1) %>%
     # create new end date = outcome date (this may be the same as the current end date but it may be earlier or later depending on the outcome, so need to override)
@@ -64,11 +57,21 @@ time_update_vaccinedoses <- function(data, outcome_var, exclude_recent_vacc = FA
   small_base_cases <- NULL
   small_base_controls <- NULL
   
+  # amend the vaccine data if it's < 12 weeks before the end of the study
+  if(exclude_recent_vacc) {
+    small_base$vaccine_dose_1_date[small_base$vaccine_dose_1_date > (small_base$new_end_date - exclusion_window)] <- NA
+    small_base$vaccine_dose_2_date[small_base$vaccine_dose_2_date > (small_base$new_end_date - exclusion_window)] <- NA
+    small_base$vaccine_dose_3_date[small_base$vaccine_dose_3_date > (small_base$new_end_date - exclusion_window)] <- NA
+    ## repeat for first mrna and first non-mrna vaccine dates
+    small_base$first_non_mrna_vaccine_date[small_base$first_non_mrna_vaccine_date > (small_base$new_end_date - exclusion_window)] <- NA
+    small_base$first_mrna_vaccine_date[small_base$first_mrna_vaccine_date > (small_base$new_end_date - exclusion_window)] <- NA
+  }
+  
   # calculate time difference for each vaccine dose
   df_vacc_base_t <- small_base %>%
     # again, need to filter out anyone who has the event before/on the same day as study entry (should be redundant but just in case)
     filter(t>0) %>% 
-    select(patient_id, pt_start_date, contains("vaccine_dose_")) %>% 
+    dplyr::select(patient_id, pt_start_date, contains("vaccine_dose_")) %>%
     mutate(vacc_time_1 = pt_start_date %--% vaccine_dose_1_date / dyears(1),
            vacc_time_2 = pt_start_date %--% vaccine_dose_2_date / dyears(1),
            vacc_time_3 = pt_start_date %--% vaccine_dose_3_date / dyears(1)
@@ -79,26 +82,13 @@ time_update_vaccinedoses <- function(data, outcome_var, exclude_recent_vacc = FA
   ## repeat that process for mrna 
   df_vacc_base_mrna <- small_base %>%
     filter(t>0) %>% 
-    select(patient_id, pt_start_date, first_non_mrna_vaccine_date, first_mrna_vaccine_date) %>% 
+    dplyr::select(patient_id, pt_start_date, first_non_mrna_vaccine_date, first_mrna_vaccine_date) %>% 
     mutate(
       vacc_time_non_mRNA = pt_start_date %--% first_non_mrna_vaccine_date / dyears(1),
       vacc_time_mRNA = pt_start_date %--% first_mrna_vaccine_date / dyears(1)
       ) %>% 
     dplyr::select(-contains("vaccine_dose")) %>% 
     pivot_longer(cols = starts_with("vacc_time_"), names_to = "mrna", names_pattern = "vacc_time_(.*)", values_to = "years")
-  
-  ## repeat that process for first vaccine manufacturer 
-  df_vacc_base_primarydose <- small_base %>%
-    # again, need to filter out anyone who has the event before/on the same day as study entry (should be redundant but just in case)
-    filter(t>0) %>% 
-    select(patient_id, pt_start_date, vaccine_dose_1_date, vaccine_dose_1_manufacturer) %>% 
-    mutate(
-      vacc_time_dose1 = pt_start_date %--% vaccine_dose_1_date / dyears(1)
-      ) %>% 
-    #dplyr::select(-contains("vaccine_dose")) %>% 
-    pivot_longer(cols = starts_with("vacc_time_"), names_to = "vacc_no", values_to = "years")
-  
-  df_vacc_base_primarydose$primary_course = df_vacc_base_primarydose$vaccine_dose_1_manufacturer
   
   # time update on dominant variant 
   # from UK covid dashboard https://coronavirus.data.gov.uk/details/cases?areaType=nation%26areaName=England#card-variant_percentage_of_available_sequenced_episodes_by_week
@@ -121,18 +111,14 @@ time_update_vaccinedoses <- function(data, outcome_var, exclude_recent_vacc = FA
   
   newsurvival <- survival::tmerge(newsurvival, df_vacc_base_mrna, id = patient_id, t_vacc_mrna = tdc(years, mrna, "No vaccine")) 
   
-  newsurvival <- survival::tmerge(newsurvival, df_vacc_base_primarydose, id = patient_id, t_vacc_primary = tdc(years, primary_course, "No vaccine")) 
-  
   newsurvival %>%
-    select(-outcome_binary,-pt_end_date) %>%
+    dplyr::select(-outcome_binary,-pt_end_date) %>%
     rename(pt_end_date = new_end_date) %>%
     mutate(vaccines = factor(
       vaccines,
       levels = 0:3,
       labels = c("0", "1", "2", "3+")
     )) %>%
-    mutate(t_vacc_primary = factor(t_vacc_primary,
-                                  levels = c("No vaccine", "AstraZeneca", "Pfizer", "Other"))) %>%
     mutate(t_vacc_mrna = factor(t_vacc_mrna,
                                   levels = c("No vaccine", "non_mRNA", "mRNA"))) %>%
     mutate(variant = factor(variant, 
