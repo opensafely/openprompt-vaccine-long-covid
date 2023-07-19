@@ -38,9 +38,9 @@ write.csv(snomedcode_table, here::here("output/tables/tab5_snomedcode_count.csv"
 ## Got too many codes so the counts will be small. Refactor the 
 # codes beased on the counts in the above table
 
-# keep the top 5 codes
+# keep the top 3 codes
 x <- snomedcode_table$term
-keep_codes <- x[1:5]
+keep_codes <- x[1:3]
 
 # repeat "Other" for the remaining categories
 other_codes <- rep("Other", length(x)-length(keep_codes))
@@ -52,7 +52,7 @@ clean_data_snomedcode$term_fct <- factor(clean_data_snomedcode$term,
 
 summarise_records_by_month <- function(timedata_in, outcome_date){
   timedata_in %>% 
-    # create a binayr and date variable for the outcome
+    # create a binary and date variable for the outcome
     rename(outcome_date = {{outcome_date}}) %>% 
     mutate(outcome_binary = 1) %>% 
     ungroup() %>% 
@@ -69,22 +69,32 @@ summarise_records_by_month <- function(timedata_in, outcome_date){
 }
 snomed_over_time <- summarise_records_by_month(filter(clean_data_snomedcode, !is.na(first_lc)), "first_lc")
 
+snomed_over_time$sum_out <- redact_and_round(snomed_over_time$sum_out, redact_threshold = 10)
+
 write.csv(snomed_over_time, here::here("output/raw_counts_by_code_over_time.csv"))
-# TODO: add in redaction here
 
-p1 <- ggplot(snomed_over_time, aes(x = date, y = sum_out, col = term_fct)) + 
-  geom_point(pch = 1) +
-  geom_line(alpha = 0.5) +
-  guides(colour=guide_legend(nrow=3,byrow=TRUE)) +
-  labs(y = "Weekly Long COVID code count",
-       x = "Date", 
-       colour = "Code") +
-  theme_ali() +
-  theme(legend.position = "bottom",
-        legend.box="vertical", 
-        legend.text = element_text(size = 8),
-        legend.margin=margin())
+if(max(snomed_over_time$sum_out, na.rm = T) > 0) {
+  p1 <- ggplot(snomed_over_time, aes(x = date, y = sum_out, col = term_fct, fill = term_fct)) + 
+    geom_col() +
+    guides(
+      colour=guide_legend(nrow=3,byrow=TRUE),
+      fill=guide_legend(nrow=3,byrow=TRUE)
+      ) +
+    facet_wrap(~term_fct, ncol = 2) +
+    labs(y = "Weekly Long COVID code count",
+         x = "Date", 
+         colour = "SNOMED code",
+         fill = "SNOMED code") +
+    theme_ali() +
+    theme(legend.position = "bottom",
+          legend.box="vertical", 
+          legend.text = element_text(size = 8),
+          legend.margin=margin(),
+          strip.text = element_blank())
+}else{
+  p1 <- ggplot() + theme_void()
+}
 
-pdf(here::here("output/figures/fig2f_raw_counts_by_code.pdf"), width = 12, height = 6)
+pdf(here::here("output/figures/fig2f_raw_counts_by_code.pdf"), width = 8, height = 6)
   p1
 dev.off()

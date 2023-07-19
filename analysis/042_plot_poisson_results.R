@@ -9,6 +9,7 @@ source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
 
 adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
+
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 
@@ -28,7 +29,7 @@ if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
 }
 
 outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
-cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
+cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16)]
 names(cols) <- outcome_list
 
 # plot rate ratios with table -----------------------------------------------------
@@ -65,7 +66,7 @@ suppress_labs <- function(string) {
   rep("", length(string))
 }
 
-create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(7, 3), legend_position = "right") {
+create_forest_plot_by_variant <- function(data_in, y_col_var, plot_rel_widths = c(4, 6), legend_position = "right") {
   if (y_col_var == "outcome"){
     outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
     cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
@@ -78,19 +79,20 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
   
   data_for_table <- data_in %>%
     # filter to the variant 
-    filter(covid_variant == eval(variant)) %>% 
+    filter(covid_variant != "All") %>% 
     # keep the texty stuff for a nice table
-    dplyr::select(strat_var, term2, outcome, model, textrate, textci) %>%
+    dplyr::select(strat_var, term2, outcome, covid_variant, model, textrate, textci) %>%
     # convert to longer for plotting
     tidyr::pivot_longer(c(textrate, textci), names_to = "stat") %>%
     mutate(stat = factor(stat, levels = c("textrate", "textci")))
     
   rr_tab <- data_for_table %>%
     ggplot(aes(x = stat, y = term2, label = value)) +
-    geom_text(size = 5, hjust = 1) +
-    scale_x_discrete(position = "bottom", labels = c("RR", "95% CI")) +
+    geom_text(size = 4, hjust = 1) +
+    scale_x_discrete(position = "top", labels = c("RR", "95% CI")) +
     facet_grid(
-      strat_var ~ get(y_col_var),
+      rows = vars(strat_var),
+      cols = vars(get(y_col_var), covid_variant),
       scales = "free_y",
       space = "free_y",
       switch = "y"
@@ -99,7 +101,7 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     theme_classic() +
     theme(
       strip.background = element_blank(),
-      strip.text.y.left = element_text(size = 12, angle = 0, hjust = 0, vjust = 0, face = "bold"),
+      strip.text.y.left = element_text(size = 12, angle = 0, hjust = 0, vjust = 0.1, face = "bold"),
       strip.text.x = element_text(face = "bold"),
       strip.placement = "outside",
       panel.grid.major = element_blank(),
@@ -110,10 +112,8 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
       axis.title = element_text(face = "bold")
       )
   
-  pd <- position_dodge(2)
-  
   rr_forest <- data_in %>% 
-    filter(covid_variant == eval(variant)) %>% 
+    filter(covid_variant != "All") %>% 
     ggplot(
       aes(x = term2,
           y = rate,
@@ -122,17 +122,18 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
           group = get(y_col_var),
           colour = get(y_col_var))) +
     geom_hline(yintercept = 1, colour = "gray60") +
-    geom_pointrange(size = 1.3, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
+    geom_pointrange(size = 1.3, pch = 1, position = position_dodge(width = 0.5)) +
     #geom_point(position = position_dodge(width = 0.5)) +
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",
-         colour = eval(variant)) +
+         colour = "Outcome") +
     facet_grid(
-      strat_var ~ " ",
+      cols = vars(covid_variant),
+      rows = vars(strat_var),
       scales = "free",
       space = "free",
-      labeller = labeller(strat_var = suppress_labs,
-                          term2 = suppress_labs)
+      switch = "y",
+      labeller = labeller(strat_vars = suppress_labs)
     ) +
     scale_color_manual(values = cols) +
     scale_y_log10(breaks = c(0.1, 0.2, 0.33, 0.5, 1.0, 2.0, 3.0, 5, 10),
@@ -144,12 +145,13 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
       title = element_text(size = 9),
       strip.background = element_rect(colour = NA, fill = NA),
       strip.text.x = element_text(face = "bold", size = 9),
+      strip.text.y.left = element_text(size = 9, angle = 0, hjust = 0, vjust = 0.1, face = "bold"),
       strip.placement = "outside",
       panel.border = element_rect(fill = NA, color = "black"),
       legend.position = legend_position,
       legend.title = element_text(face = "bold", size = 10),
       axis.text.x = element_text(face = "bold"),
-      axis.text.y = element_blank(),
+      #axis.text.y = element_blank(),
       axis.title = element_text(size = 10, face = "bold"),
       plot.title = element_text(
         face = "bold",
@@ -159,83 +161,29 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     ) +
     coord_flip()
   
-  ggarrange(rr_tab, rr_forest, ncol = 2, nrow=1, common.legend = T, legend = "right", widths = plot_rel_widths)
+  ggarrange(rr_forest, rr_tab, ncol = 1, nrow=2, common.legend = T, legend = "right", heights = plot_rel_widths)
 }
 
 # # Crude RRs
-p_alpha <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "0: wild/alpha")
-p_delta <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "1: delta")
-p_omicron <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "2: omicron")
-p_all <- create_forest_plot(filter(full_rates, model == "crude"), y_col_var = "outcome", variant = "All")
+crude_plot <- create_forest_plot_by_variant(filter(full_rates, model == "crude"), y_col_var = "outcome")
 
-pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 16, height = 12, onefile=FALSE)
-  cowplot::plot_grid(p_alpha, p_delta, p_omicron, p_all, ncol = 1)
+pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 20, height = 10, onefile=FALSE)
+  crude_plot
 dev.off()
 
 # Adjusted RRs
-p_alpha <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "0: wild/alpha")
-p_delta <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "1: delta")
-p_omicron <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "2: omicron")
-p_all <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome", variant = "All")
+adjusted_plot <- create_forest_plot_by_variant(filter(full_rates, model == "adjusted"), y_col_var = "outcome")
 
-pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 16, height = 12, onefile=FALSE)
-  cowplot::plot_grid(p_alpha, p_delta, p_omicron, p_all, ncol = 1)
+pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 20, height = 10, onefile=FALSE)
+  adjusted_plot
 dev.off()
-# 
-# # Long COVID adjusted outcomes only
-# pdf(here("output/figures/fig3c_longcovid_RRs.pdf"), width = 20, height = 20, onefile=FALSE)
-#   create_forest_plot(filter(full_rates, str_detect(outcome, "Long") & model == "adjusted"), y_col_var = "outcome")
-# dev.off()
-# 
-# # All Long COVID only: adjusted versus crude
-# pdf(here("output/figures/fig3d_longcovid_models.pdf"), width = 20, height = 20, onefile=FALSE)
-#   create_forest_plot(filter(full_rates, outcome == "All Long COVID"), 
-#                      legend_position = "none", 
-#                      y_col_var = "model")
-# dev.off()
 
 # Focus on vaccines
-p_alpha <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "0: wild/alpha")
-p_delta <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "1: delta")
-p_omicron <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "2: omicron")
-p_all <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted"), y_col_var = "outcome", variant = "All")
+vaccine_plot <- create_forest_plot_by_variant(filter(full_rates, model == "adjusted", str_detect(strat_var, "vaccine")), y_col_var = "outcome")
 
 pdf(here("output/figures/fig3e_vaccines.pdf"), width = 16, height = 12, onefile=FALSE)
-  cowplot::plot_grid(p_alpha, p_delta, p_omicron, p_all, ncol = 1)
+  vaccine_plot
 dev.off()
-
-# vaccines and long covid focuse
-# pdf(here("output/figures/fig3f_longcovid_vaccine_models.pdf"), width = 20, height = 8, onefile=FALSE)
-#   create_forest_plot(filter(full_rates, str_detect(outcome, "Long") & str_detect(strat_var, "accine") & model == "adjusted"), y_col_var = "outcome",
-#                      plot_rel_widths = c(7, 3))
-# dev.off()
-# 
-# # non Vaccine stratifiers
-# pdf(here("output/figures/fig3g_demographics.pdf"), width = 20, height = 12, onefile=FALSE)
-#   create_forest_plot(filter(full_rates, !str_detect(strat_var, "accine") & model == "adjusted"), y_col_var = "outcome",
-#                    plot_rel_widths = c(7, 3))
-# dev.off()
-
-# put them all on one plot  -----------------------------------------------
-# pdf(here("output/figures/fig3h_rate_ratios_facet.pdf"), width = 12, height = 14, onefile=FALSE)
-# pd = position_dodge(1)
-# adjusted_rates_out %>% 
-#   filter(plot_marker) %>% 
-#   ggplot(aes(x=term2, y = rate, ymin = conf.low, ymax = conf.high, colour = outcome, lty = model, alpha = model)) +
-#   geom_point(size = 1.5, pch = 16, position = pd) +
-#   geom_linerange(lwd = 1, position = pd) +
-#   geom_hline(yintercept = 1, lty = 2) +  # add a dotted line at x=1 after flip
-#   coord_flip() +
-#   facet_wrap(~strat_var, scales = "free", ncol = 3) + 
-#   labs(y = "Incidence Rate Ratio (95% CI)", x = "") +
-#   scale_color_manual(outcome_list, values = cols) +
-#   scale_alpha_manual(c("crude", "adjusted"), values = c(0.5, 1)) +
-#   guides(alpha = "none", colour = guide_legend("Outcome"), lty = guide_legend("Model")) +
-#   theme_ali() +
-#   theme(legend.position = "top",
-#         strip.background = element_blank())
-# dev.off()
-
 
 # Make a nice table of the results ----------------------------------------
 output_poisson_rates <- full_rates %>% 
@@ -265,7 +213,6 @@ output_poisson_rates <- full_rates %>%
                                "Age category",
                                "Sex",
                                "No. vaccine doses",
-                               "First vaccine received",
                                "mRNA vaccine received"
                              ))) %>% 
   arrange(variable, model, level) 

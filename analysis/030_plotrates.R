@@ -69,12 +69,10 @@ timeseries_plot <- bind_rows(timeseries_lc_all,
 timeseries_lc_all <- NULL
 timeseries_lc_dx <- NULL
 
-timeseries_plot$redacted_out <- redactor2(timeseries_plot$sum_out, threshold = redact_threshold)
-
 # for p2 need to agregate by sex to get a single panel plot
 p2_data <- timeseries_plot %>% 
   group_by(date, outcome) %>% 
-  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = redact_threshold), .groups = "keep")
+  summarise(redacted_out = redact_and_round(sum(sum_out, na.rm = T), redact_threshold = redact_threshold), .groups = "keep")
 
 if(max(p2_data$redacted_out, na.rm = T) > 0){
   p_base <- ggplot(p2_data, aes(x = date, y = redacted_out, colour = outcome, fill = outcome)) +
@@ -87,18 +85,21 @@ if(max(p2_data$redacted_out, na.rm = T) > 0){
   p2 <- p_base + 
     geom_line(lwd = 0.2, lty = 1) +
     labs(colour = "Long COVID record") +
-    theme(legend.position = "top")
+    theme(legend.position = "top") +
+    ylim(c(0, NA))
   
   # group by sex as well redact data for 2x2 plot
   p2b_data <- timeseries_plot %>% 
     group_by(date, sex, outcome) %>% 
-    summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = redact_threshold), .groups = "keep")
+    summarise(redacted_out = redact_and_round(sum(sum_out, na.rm = T), redact_threshold = redact_threshold), .groups = "keep")
 
   if(max(p2b_data$redacted_out, na.rm = T) > 0){
     p2a <- p_base +
       geom_col(data = p2b_data, col = "gray20", lwd = 0.2) +
       facet_grid(sex~outcome) +
-      theme(legend.position = "none")
+      theme(legend.position = "none") +
+      ylim(c(0, NA))
+    
     
   }else{
     p2a <- ggplot() + theme_void()
@@ -115,17 +116,18 @@ dev.off()
 pdf(here("output/figures/fig2a_raw_counts_line_bysex.pdf"), width = 8, height = 6)
   p2a
 dev.off()
+
 # column chart by vaccine status ------------------------------------------
 # get long covid (ANY)  summarised by sex for a single panel plot
 p2b_data <- timeseries_plot %>% 
   filter(outcome == "long COVID") %>% 
   group_by(date, vaccines) %>% 
   summarise(sum_out = sum(sum_out), .groups = "keep") %>% 
-  mutate(redacted_out = redactor2(sum_out, threshold = redact_threshold)) 
+  mutate(redacted_out = redact_and_round(sum_out, redact_threshold = redact_threshold)) 
 
 # redact data by outcome and sex for 2x2 panel plot
 p2c_data <- timeseries_plot %>% 
-  mutate(redacted_out = redactor2(sum_out, threshold = redact_threshold)) 
+  mutate(redacted_out = redact_and_round(sum_out, redact_threshold = redact_threshold)) 
 
 if(max(p2c_data$redacted_out, na.rm = T) > 0){
   # make base plot for 2b and 2c  
@@ -160,7 +162,7 @@ dev.off()
 # stacked bar chart for proportion Rx vs Dx -------------------------------
 stacked_bar <- timeseries_plot %>% 
   group_by(date, outcome) %>% 
-  summarise(redacted_out = redactor2(sum(sum_out, na.rm = T), threshold = redact_threshold), .groups = "keep")
+  summarise(redacted_out = redact_and_round(sum(sum_out, na.rm = T), redact_threshold = redact_threshold), .groups = "keep")
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
 p2e <- ggplot(stacked_bar, aes(fill=lc_dx, y=redacted_out, x=date)) + 

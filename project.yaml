@@ -194,7 +194,7 @@ actions:
     needs: [calculate_daily_dynamics]
     outputs:
       moderately_sensitive:
-        dailydynamics_plot: output/figures/fig4f_daily_cases.pdf
+        dailydynamics_plot: output/figures/fig2g_daily_cases.pdf
         dailydynamics_data: output/data_daily_dynamics_plot.csv
   
   plot_monthly_dynamics:
@@ -278,10 +278,10 @@ actions:
     run: >
       r:latest
         analysis/044_plot_poisson_results_sensAnalyses.R
-    needs: [poisson_rates_timeupdated_sensAnalysis]
+    needs: [poisson_rates_timeupdated_sensAnalysis, poisson_rates_timeupdated]
     outputs: 
       moderately_sensitive: 
         fig3a_sensAnalyses: output/figures/fig3a_crude_RRs_sensAnalysis.pdf
         fig3b_sensAnalyses: output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf
-        fig3e_sensAnalyses: output/figures/fig3e_vaccines_sensAnalysis.pdf
+        fig3c_sens_analyses: output/figures/fig3b_adjusted_RRs_all_outcomes_sensAnalysis.pdf
         poissonplots_table_sensAnalyses: output/tables/tab4_poisson_rateratios_sensAnalysis.csv

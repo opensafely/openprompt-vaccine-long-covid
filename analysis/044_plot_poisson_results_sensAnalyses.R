@@ -8,7 +8,8 @@ library(here)
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
 
-adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated_sensAnalysis.csv") 
+adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
+adjusted_rates_out_SA <- read_csv("output/tab023_poissonrates_timeupdated_sensAnalysis.csv") 
 
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
@@ -29,13 +30,15 @@ if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
 }
 
 outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
-cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
+cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16)]
 names(cols) <- outcome_list
 
 # plot rate ratios with table -----------------------------------------------------
 sigdig <- 2
 # bit of formatting so it all looks pretty in the plots
 full_rates <- adjusted_rates_out %>% 
+  mutate(sa = "0 weeks") %>% 
+  bind_rows(adjusted_rates_out_SA) %>% 
   # just keep the useful data
   dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant, sa) %>% 
   # convert the lovely estimates to lovely strings
@@ -47,7 +50,7 @@ full_rates <- adjusted_rates_out %>%
   mutate(term2 = str_replace_all(term2, "\\(", " \\(")) %>% 
   mutate(term2 = str_replace_all(term2, "  \\(", " \\(")) %>% 
   # change ordering of outcome variable 
-  mutate(outcome = factor(outcome, levels = c("All Long COVID", "Long COVID diagnoses", "Fractures", "COVID-19 hospitalisation"))) %>% 
+  mutate(outcome = factor(outcome, levels = c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation"))) %>% 
   # change ordering of stratification variables
   mutate(strat_var = factor(
     strat_var,
@@ -55,33 +58,35 @@ full_rates <- adjusted_rates_out %>%
       "Age category",
       "Sex",
       "No. vaccine doses",
-      "First vaccine received",
       "mRNA vaccine received"
     )
   )) %>% 
   # filter so just the stratifier results are shown (not the age, and sex coefficients)
-  filter(plot_marker)
+  filter(plot_marker) %>% 
+  # create structure of SA variable with factor
+  mutate(sa = factor(sa,
+         levels = c("0 weeks",
+                    "2 weeks",
+                    "4 weeks",
+                    "12 weeks"
+                    ))
+  )
 
+## Only keep the vaccine stratifiedmodels and the ALL variant models for this plot
+full_rates <- full_rates %>% 
+  filter(str_detect(strat_var, "vaccine"),
+         covid_variant == "All"
+         )
+
+## little function to suppress the facet_grid labels so they are not repeated
 suppress_labs <- function(string) {
   rep("", length(string))
 }
 
-create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(7, 3), legend_position = "right") {
-  if (y_col_var == "outcome"){
-    outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
-    cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
-    names(cols) <- outcome_list
-  } else {
-    n_cols <- dplyr::select(data_in, {{y_col_var}}) %>% unique() %>% pull()
-    cols <- hcl.colors(length(n_cols), palette = "Viridis")
-    names(cols) <- n_cols
-  }
-  
+create_forest_plot <- function(data_in, variant, plot_rel_widths = c(7, 3), legend_position = "right") {
   data_for_table <- data_in %>%
-    # filter to the variant 
-    filter(covid_variant == eval(variant)) %>% 
     # keep the texty stuff for a nice table
-    dplyr::select(strat_var, term2, outcome, model, textrate, textci) %>%
+    dplyr::select(strat_var, term2, sa, outcome, model, textrate, textci) %>%
     # convert to longer for plotting
     tidyr::pivot_longer(c(textrate, textci), names_to = "stat") %>%
     mutate(stat = factor(stat, levels = c("textrate", "textci")))
@@ -89,9 +94,10 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
   rr_tab <- data_for_table %>%
     ggplot(aes(x = stat, y = term2, label = value)) +
     geom_text(size = 5, hjust = 1) +
-    scale_x_discrete(position = "bottom", labels = c("RR", "95% CI")) +
+    scale_x_discrete(position = "top", labels = c("RR", "95% CI")) +
     facet_grid(
-      strat_var ~ get(y_col_var),
+      rows = vars(strat_var),
+      cols = vars(outcome, sa),
       scales = "free_y",
       space = "free_y",
       switch = "y"
@@ -100,7 +106,7 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     theme_classic() +
     theme(
       strip.background = element_blank(),
-      strip.text.y.left = element_text(size = 12, angle = 0, hjust = 0, vjust = 0, face = "bold"),
+      strip.text.y.left = element_text(size = 12, angle = 0, hjust = 0, vjust = 0.1, face = "bold"),
       strip.text.x = element_text(face = "bold"),
       strip.placement = "outside",
       panel.grid.major = element_blank(),
@@ -111,29 +117,27 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
       axis.title = element_text(face = "bold")
     )
   
-  pd <- position_dodge(2)
-  
   rr_forest <- data_in %>% 
-    filter(covid_variant == eval(variant)) %>% 
     ggplot(
       aes(x = term2,
           y = rate,
           ymin = conf.low,
           ymax = conf.high,
-          group = get(y_col_var),
-          colour = get(y_col_var))) +
+          group = outcome,
+          colour = outcome)) +
     geom_hline(yintercept = 1, colour = "gray60") +
-    geom_pointrange(size = 1.3, pch = 1, position = position_dodge(width = 0.5), width = 0.5) + 
-    #geom_point(position = position_dodge(width = 0.5)) +
+    geom_pointrange(size = 1.3, pch = 1, position = position_dodge(width = 0.5)) + 
     labs(x = "", 
          y = "Rate ratio (95% Confidence Interval)",
-         colour = eval(variant),
+         colour = "Outcome",
          title = "") +
     facet_grid(
-      strat_var ~ " ",
+      rows = vars(strat_var),
+      cols = vars(sa),
       scales = "free",
       space = "free",
       labeller = labeller(strat_var = suppress_labs,
+                          #sa = suppress_labs,
                           term2 = suppress_labs)
     ) +
     scale_color_manual(values = cols) +
@@ -148,10 +152,10 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
       strip.text.x = element_text(face = "bold", size = 9),
       strip.placement = "outside",
       panel.border = element_rect(fill = NA, color = "black"),
-      legend.position = legend_position,
+      legend.position = "right",
       legend.title = element_text(face = "bold", size = 10),
       axis.text.x = element_text(face = "bold"),
-      axis.text.y = element_blank(),
+      #axis.text.y = element_blank(),
       axis.title = element_text(size = 10, face = "bold"),
       plot.title = element_text(
         face = "bold",
@@ -161,33 +165,25 @@ create_forest_plot <- function(data_in, y_col_var, variant, plot_rel_widths = c(
     ) +
     coord_flip()
   
-  ggarrange(rr_tab, rr_forest, ncol = 2, nrow=1, common.legend = T, legend = "right", widths = plot_rel_widths)
+  ggarrange(rr_forest, rr_tab, ncol = 1, nrow=2, common.legend = T, legend = "right", heights = c(0.4, 0.6))
 }
 
-# # Crude RRs
-p_4wks <- create_forest_plot(filter(full_rates, model == "crude", sa == "4 weeks"), y_col_var = "outcome", variant = "All")
-p_12wks <- create_forest_plot(filter(full_rates, model == "crude", sa == "12 weeks"), y_col_var = "outcome", variant = "All")
-
-#TODO: need to add the 2weeks excluion plot. But best compared to the main estimates
-
-pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 16, height = 12, onefile=FALSE)
-  cowplot::plot_grid(p_12wks, p_4wks, ncol = 1, labels = c("12 weeks excl.", "4 weeks excl."))
+## Crude RRs
+pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 17, height = 10, onefile=FALSE)
+  create_forest_plot(filter(full_rates, model == "crude", outcome != "COVID-19 hospitalisation"))
 dev.off()
 
 # Adjusted RRs
-p_4wks <- create_forest_plot(filter(full_rates, model == "adjusted", sa == "4 weeks"), y_col_var = "outcome", variant = "All")
-p_12wks <- create_forest_plot(filter(full_rates, model == "adjusted", sa == "12 weeks"), y_col_var = "outcome", variant = "All")
+adjusted_plot <- create_forest_plot(filter(full_rates, model == "adjusted", outcome != "COVID-19 hospitalisation"))
 
-pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 16, height = 12, onefile=FALSE)
-cowplot::plot_grid(p_12wks, p_4wks, ncol = 1, labels = c("12 weeks excl.", "4 weeks excl."))
+pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 17, height = 10, onefile=FALSE)
+  adjusted_plot
 dev.off()
 
-# Focus on vaccines
-p_4wks <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted", sa == "4 weeks"), y_col_var = "outcome", variant = "All")
-p_12wks <- create_forest_plot(filter(full_rates, str_detect(strat_var, "accine"), model == "adjusted", sa == "12 weeks"), y_col_var = "outcome", variant = "All")
+covid_hosp_plot <- create_forest_plot(filter(full_rates, model == "adjusted"))
 
-pdf(here("output/figures/fig3e_vaccines_sensAnalysis.pdf"), width = 16, height = 12, onefile=FALSE)
-  cowplot::plot_grid(p_12wks, p_4wks, ncol = 1, labels = c("12 weeks excl.", "4 weeks excl."))
+pdf(here("output/figures/fig3b_adjusted_RRs_all_outcomes_sensAnalysis.pdf"), width = 20, height = 10, onefile=FALSE)
+  covid_hosp_plot
 dev.off()
 
 # Make a nice table of the results ----------------------------------------
@@ -222,7 +218,7 @@ output_poisson_rates <- full_rates %>%
                              "First vaccine received",
                              "mRNA vaccine received"
                            ))) %>% 
-  arrange(variable, model, level) 
+  arrange(variable, model, level, sa) 
 
 ## output the neat csv
 output_poisson_rates %>% 
