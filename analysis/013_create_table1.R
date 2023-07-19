@@ -221,7 +221,7 @@ vaccine_gaps_data %>%
   dplyr::filter(!is.na(lc_dx_flag)) %>% 
   ggplot(aes(x = last_vacc_gap, fill = no_prev_vacc)) +
   geom_density(alpha = 0.4) +
-  facet_wrap(~lc_dx_flag, ncol = 1) +
+  scale_x_continuous(trans = "reverse") +
   labs(fill = "Number of vaccine doses", x = "Gap between vaccine and long COVID record (months)") +
   theme_ali()
 dev.off()
@@ -232,7 +232,6 @@ vaccine_gaps_data %>%
   dplyr::filter(!is.na(lc_dx_flag)) %>% 
   ggplot(aes(x = last_vacc_gap, fill = no_prev_vacc)) +
   geom_density(alpha = 0.4) +
-  facet_wrap(~lc_dx_flag, ncol = 1) +
   xlim(c(6, 0)) +
   labs(fill = "Number of vaccine doses", x = "Gap between vaccine and long COVID record (months)") +
   theme_ali()
