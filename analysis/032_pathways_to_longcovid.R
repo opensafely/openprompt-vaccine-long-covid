@@ -1,6 +1,7 @@
 library(tidyverse)
 library(ggalluvial)
 library(here)
+library(glue)
 library(gt)
 library(gtsummary)
 
@@ -194,9 +195,19 @@ long_covid_demographics_by_test_status %>%
     path = fs::path(output_dir_tab)
   )
 
-#TODO: add redaction
-long_covid_demographics_by_test_status_tbl <- long_covid_demographics_by_test_status$table_body %>% 
-  dplyr::select(-test_result)
+long_covid_demographics_by_test_status_tbl <- long_covid_demographics_by_test_status$meta_data %>% 
+  select(var_label, df_stats, p.value) %>%
+  unnest(df_stats) %>% 
+  mutate(
+    n = redact_and_round(n, redact_threshold = 10),
+    N = redact_and_round(N, redact_threshold = 10),
+    p = round(n*100 / N, 1),
+    pval = round(p.value, 2),
+    output = glue::glue("{n} ({p}) [{pval}]")
+  ) %>% 
+  dplyr::select(var_label, by, variable, variable_levels, output) %>% 
+  pivot_wider(values_from = "output", names_from = "by")
+
 write.csv(long_covid_demographics_by_test_status_tbl, here::here("output/data_demographics_by_test_status.csv"))
 
 # repeat but separate by Dx or Rx code ------------------------------------
@@ -228,7 +239,17 @@ long_covid_demographics_by_dx_rx %>%
     path = fs::path(output_dir_tab)
   )
 
-#TODO: add redaction
-long_covid_demographics_by_dx_rx_tbl <- long_covid_demographics_by_dx_rx$table_body %>% 
-  dplyr::select(-test_result)
+long_covid_demographics_by_dx_rx_tbl <- long_covid_demographics_by_dx_rx$meta_data %>% 
+  select(var_label, df_stats, p.value) %>%
+  unnest(df_stats) %>% 
+  mutate(
+    n = redact_and_round(n, redact_threshold = 10),
+    N = redact_and_round(N, redact_threshold = 10),
+    p = round(n*100 / N, 1),
+    pval = round(p.value, 2),
+    output = glue::glue("{n} ({p}) [{pval}]")
+  ) %>% 
+  dplyr::select(var_label, by, variable, variable_levels, output) %>% 
+  pivot_wider(values_from = "output", names_from = "by")
+
 write.csv(long_covid_demographics_by_dx_rx_tbl, here::here("output/data_demographics_by_dx_rx.csv"))
