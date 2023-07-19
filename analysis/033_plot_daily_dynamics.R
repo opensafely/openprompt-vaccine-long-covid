@@ -21,6 +21,12 @@ cols <- c(
   "long COVID hospital" = "forestgreen")
 
 lc_dx_cols <- c("coral", "aquamarine2")
+
+
+# censor daily_dynamics ---------------------------------------------------
+dt_daily$n_first_lc <- redact_and_round(dt_daily$n_first_lc, redact_threshold = 10)
+dt_daily$n_first_lc_dx <- redact_and_round(dt_daily$n_first_lc_dx, redact_threshold = 10)
+
 # daily dynamics  ---------------------------------------------------------
 pd <- position_dodge(width = 0.5)
 p4f1 <- ggplot(dt_daily, aes(x = date)) + 
@@ -35,7 +41,7 @@ p4f1 <- ggplot(dt_daily, aes(x = date)) +
         legend.box="vertical", 
         legend.margin=margin())
 
-pdf(here("output/figures/fig4f_daily_cases.pdf"), width = 8, height = 6)
+pdf(here("output/figures/fig2g_daily_cases.pdf"), width = 8, height = 6)
   p4f1
 dev.off()
 
