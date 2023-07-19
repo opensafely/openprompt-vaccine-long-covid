@@ -21,40 +21,46 @@ clean_data_non_long_covid <- arrow::read_parquet(here("output/clean_dataset.gz.p
 
 # combine lc --> vaccine, and no_lc --> vaccine ---------------------------
 vaccine_data <- lc_first %>% 
-  dplyr::select(patient_id, no_total_vacc, sex, age_cat, ethnicity) %>% 
-  mutate(no_prev_vacc = cut(
-    no_total_vacc,
-    breaks = c(-Inf, 0:2, Inf),
-    labels = c(as.character(0:2), "3+")
-    ),
+  dplyr::select(patient_id, no_total_vacc, first_lc, starts_with("pt_"), sex, age_cat) %>% 
+  mutate(
+    # make the lc date the start of obs. period
+    pt_start_date = first_lc,
+    no_prev_vacc = cut(
+      no_total_vacc,
+      breaks = c(-Inf, 0:2, Inf),
+      labels = c(as.character(0:2), "3+")
+    ), 
     lc_out = 1
   ) %>%  
   bind_rows(
-    dplyr::select(clean_data_non_long_covid, patient_id, no_prev_vacc, sex, age_cat, ethnicity, lc_out)
+    dplyr::select(clean_data_non_long_covid, patient_id, starts_with("pt_"), no_prev_vacc, sex, age_cat, lc_out)
+  ) %>% 
+  mutate(
+    pyrs = (pt_start_date %--% pt_end_date) / dyears(1)
   )
 
 # regroup vaccines --------------------------------------------------------
 lc_first_vacced <- vaccine_data %>% 
   mutate(lc_out = factor(lc_out)) %>% 
-  group_by(no_prev_vacc, lc_out, age_cat, ethnicity) %>% 
-  summarise(n = n(), .groups = "keep") %>% 
-  group_by(lc_out, age_cat, ethnicity) %>% 
-  mutate(group_n = sum(n)) %>% 
+  group_by(no_prev_vacc, lc_out, age_cat) %>% 
+  summarise(n = n(), pyrs = sum(pyrs), .groups = "keep") %>% 
   ungroup() %>% 
-  mutate(pct_vacc = round((n/group_n)*100, 2))
+  mutate(
+    n = redact_and_round(n, redact_threshold = 10),
+    vacc_rate = round((n*1e5)/pyrs, 2)
+    )
 
-# TODO: redact these data 
 write.csv(lc_first_vacced, here::here("output/lc_first_vaccination.csv"))
 
-pdf(here("output/figures/fig6_vaccine_after_lc.pdf"), width = 8, height = 6)
-ggplot(lc_first_vacced, aes(x = no_prev_vacc, y = pct_vacc, fill = lc_out, colour = lc_out)) + 
+pdf(here("output/figures/fig6_vaccine_after_lc.pdf"), width = 6, height = 6)
+ggplot(lc_first_vacced, aes(x = no_prev_vacc, y = vacc_rate, fill = lc_out, colour = lc_out)) + 
   geom_col(position = position_dodge(width = 0.2), alpha = 0.6) +
   coord_flip() +
-  labs(y = "# vaccines received",
-       x = "%",
+  labs(x = "# vaccines received",
+       y = "Vaccination rate (per 100,000 person-years",
        fill = "long COVID",
        colour = "long COVID"
        ) +
-  facet_grid(age_cat~ethnicity) +
+  facet_grid(age_cat ~ " ") +
   theme_ali()
 dev.off()
