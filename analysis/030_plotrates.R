@@ -188,6 +188,12 @@ pdf(here("output/figures/fig2_longcovid_dynamics.pdf"), width = 6, height = 10)
   p2_full
 dev.off()
 
+
+# output the data used for figure 2 ---------------------------------------
+write_csv(p2_data, here::here("output/fig2A_data_for_plot.csv"))
+write_csv(dplyr::select(p2c_data, -sum_out), here::here("output/fig2B_data_for_plot.csv"))
+write_csv(stacked_bar, here::here("output/fig2C_data_for_plot.csv"))
+
 # supplement - time gaps between vaccine doses  ---------------------------
 vaccine_gaps <- time_data_lc_all %>%
   dplyr::select(t, vaccines, sex) %>% 

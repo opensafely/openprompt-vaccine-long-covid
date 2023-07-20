@@ -159,6 +159,9 @@ actions:
         stackedbar: output/figures/fig2e_longcovid_stacked_dx_rx.pdf
         multipanelfig: output/figures/fig2_longcovid_dynamics.pdf
         vaccinegap: output/supplementary/fig_agegap_vaccines.pdf
+        fig2a_data: output/fig2A_data_for_plot.csv
+        fig2b_data: output/fig2B_data_for_plot.csv
+        fig2c_data: output/fig2C_data_for_plot.csv
 
   longcovid_by_snomedcode:
     run: >
