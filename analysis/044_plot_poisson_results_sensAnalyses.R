@@ -169,20 +169,20 @@ create_forest_plot <- function(data_in, variant, plot_rel_widths = c(7, 3), lege
 }
 
 ## Crude RRs
-pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 17, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 25, height = 10, onefile=FALSE)
   create_forest_plot(filter(full_rates, model == "crude", outcome != "COVID-19 hospitalisation"))
 dev.off()
 
 # Adjusted RRs
 adjusted_plot <- create_forest_plot(filter(full_rates, model == "adjusted", outcome != "COVID-19 hospitalisation"))
 
-pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 17, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 25, height = 10, onefile=FALSE)
   adjusted_plot
 dev.off()
 
 covid_hosp_plot <- create_forest_plot(filter(full_rates, model == "adjusted"))
 
-pdf(here("output/figures/fig3b_adjusted_RRs_all_outcomes_sensAnalysis.pdf"), width = 20, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3b_adjusted_RRs_all_outcomes_sensAnalysis.pdf"), width = 25, height = 10, onefile=FALSE)
   covid_hosp_plot
 dev.off()
 
