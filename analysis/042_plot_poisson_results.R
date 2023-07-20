@@ -167,21 +167,21 @@ create_forest_plot_by_variant <- function(data_in, y_col_var, plot_rel_widths = 
 # # Crude RRs
 crude_plot <- create_forest_plot_by_variant(filter(full_rates, model == "crude"), y_col_var = "outcome")
 
-pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 20, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 25, height = 10, onefile=FALSE)
   crude_plot
 dev.off()
 
 # Adjusted RRs
 adjusted_plot <- create_forest_plot_by_variant(filter(full_rates, model == "adjusted"), y_col_var = "outcome")
 
-pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 20, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 25, height = 10, onefile=FALSE)
   adjusted_plot
 dev.off()
 
 # Focus on vaccines
 vaccine_plot <- create_forest_plot_by_variant(filter(full_rates, model == "adjusted", str_detect(strat_var, "vaccine")), y_col_var = "outcome")
 
-pdf(here("output/figures/fig3e_vaccines.pdf"), width = 16, height = 12, onefile=FALSE)
+pdf(here("output/figures/fig3e_vaccines.pdf"), width = 20, height = 12, onefile=FALSE)
   vaccine_plot
 dev.off()
 
