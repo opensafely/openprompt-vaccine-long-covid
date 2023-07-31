@@ -15,7 +15,8 @@ library('lubridate')
 redact_and_round <- function(x, redact_threshold = 7){
   x2 <- redactor2(x, redact_threshold)
   # round to nearest 5
-  round(x2/5)*5
+  x3 <- round(x2/5)*5
+  ifelse(x3 == 0, NA, x3)
 }
 
 # little function to first redact n<7, then round to nearest 0.5 
