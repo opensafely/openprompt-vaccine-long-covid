@@ -245,7 +245,7 @@ actions:
         fig3a: output/figures/fig3a_crude_RRs.pdf
         fig3b: output/figures/fig3b_adjusted_RRs.pdf
         fig3c: output/figures/fig3c_adjusted_RRs_by_variant.pdf
-        fig3d: output/figures/fig3e_vaccines.pdf
+        fig3d: output/figures/fig3d_vaccines.pdf
         poissonplots_table: output/tables/tab4_poisson_rateratios.csv
 
 ## Sensitivity analyses
