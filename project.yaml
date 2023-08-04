@@ -163,17 +163,6 @@ actions:
         fig2b_data: output/fig2B_data_for_plot.csv
         fig2c_data: output/fig2C_data_for_plot.csv
 
-  longcovid_by_snomedcode:
-    run: >
-      r:latest
-        analysis/031_longcovid_by_snomedcode.R
-    needs: [clean_the_data]
-    outputs:
-      moderately_sensitive:
-        tab_snomedcode_count: output/tables/tab5_snomedcode_count.csv
-        fig_snomedcode_over_time: output/figures/fig2f_raw_counts_by_code.pdf
-        tab_snomedcode_over_time: output/raw_counts_by_code_over_time.csv
-
   plot_longcovid_flows:
     run: >
       r:latest
@@ -190,15 +179,20 @@ actions:
         demographics_by_dx_rx_tbl: output/tables/tab_demographics_by_dx_rx.html
         demographics_by_dx_rx_csv: output/data_demographics_by_dx_rx.csv
   
-  plot_daily_dynamics:
+  plot_daily_dynamics_and_by_snomedcode:
     run: >
       r:latest
-        analysis/033_plot_daily_dynamics.R
-    needs: [calculate_daily_dynamics]
+        analysis/033_plot_daily_dynamics_and_by_snomedcode.R
+    needs: [clean_the_data, calculate_daily_dynamics]
     outputs:
       moderately_sensitive:
-        dailydynamics_plot: output/figures/fig2g_daily_cases.pdf
+        tab_snomedcode_count: output/tables/tab5_snomedcode_count.csv
+        tab_snomedcode_over_time: output/raw_counts_by_code_over_time.csv
         dailydynamics_data: output/data_daily_dynamics_plot.csv
+        fig_snomedcode_over_time: output/figures/fig2f_raw_counts_by_code.pdf
+        fig_dailydynamics: output/figures/fig2g_daily_cases.pdf
+        fig_dailydynamics_and_snomedcode: output/figures/fig2h_daily_dynamics_and_by_snomed.pdf
+        yourcovidrecovery_investigation: output/supplementary/yourcovidrecovery.csv
   
   plot_monthly_dynamics:
     run: >
@@ -250,9 +244,9 @@ actions:
       moderately_sensitive: 
         fig3a: output/figures/fig3a_crude_RRs.pdf
         fig3b: output/figures/fig3b_adjusted_RRs.pdf
-        fig3e: output/figures/fig3e_vaccines.pdf
+        fig3c: output/figures/fig3c_adjusted_RRs_by_variant.pdf
+        fig3d: output/figures/fig3e_vaccines.pdf
         poissonplots_table: output/tables/tab4_poisson_rateratios.csv
-
 
 ## Sensitivity analyses
   time_update_sensAnalysis: 
@@ -286,5 +280,4 @@ actions:
       moderately_sensitive: 
         fig3a_sensAnalyses: output/figures/fig3a_crude_RRs_sensAnalysis.pdf
         fig3b_sensAnalyses: output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf
-        fig3c_sens_analyses: output/figures/fig3b_adjusted_RRs_all_outcomes_sensAnalysis.pdf
         poissonplots_table_sensAnalyses: output/tables/tab4_poisson_rateratios_sensAnalysis.csv

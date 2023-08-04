@@ -84,27 +84,16 @@ adjusted_rates_t_lc_dx_4wks <- run_the_regressions_collapsed(data = time_data_lc
 adjusted_rates_t_lc_dx_4wks <- lapply(adjusted_rates_t_lc_dx_4wks, function(x){bind_cols(x, sa = "4 weeks")})
 time_data_lc_dx_sensAnalysis_4wks <- NULL
 
-# covid-hospitalisation ---------------------------------------------------
-## 3 - Hospitalised with COVID-19 as outcome - 2wks exclusion window only
-time_data_covidhosp_sensAnalysis_2wks <- arrow::read_parquet(here::here("output/timeupdate_dataset_covidhosp_sensAnalysis_2wks.gz.parquet")) %>%
-  dplyr::select(all_of(vars_for_regressions)) %>% 
-  left_join(clean_data, by = "patient_id")
-adjusted_rates_t_covidhosp_2wks <- run_the_regressions_collapsed(data = time_data_covidhosp_sensAnalysis_2wks)
-adjusted_rates_t_covidhosp_2wks <- lapply(adjusted_rates_t_covidhosp_2wks, function(x){bind_cols(x, sa = "2 weeks")})
-time_data_covidhosp_sensAnalysis_2wks <- NULL
-
 # group the outcomes ------------------------------------------------------
 adjusted_rates_out <- NULL
 adjusted_rates_list <- c("adjusted_rates_t_lc_all_12wks",
                          "adjusted_rates_t_lc_all_4wks",
                          "adjusted_rates_t_lc_dx_12wks",
-                         "adjusted_rates_t_lc_dx_4wks",
-                         "adjusted_rates_t_covidhosp_2wks")
+                         "adjusted_rates_t_lc_dx_4wks")
 outcome_list <- c("All Long COVID",
                   "All Long COVID",
                   "Long COVID diagnoses", 
-                  "Long COVID diagnoses",
-                  "COVID-19 hospitalisation")
+                  "Long COVID diagnoses")
 for(j in 1:length(adjusted_rates_list)){
   adjusted_rates_temp <- bind_rows(get(adjusted_rates_list[j]))
   outcome_name <- outcome_list[j]

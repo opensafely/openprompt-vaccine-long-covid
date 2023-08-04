@@ -8,29 +8,18 @@ library(here)
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
 
-adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
+adjusted_rates_raw <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
 
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 
-if(max(adjusted_rates_out$conf.high, na.rm = T) > 2e200){
-  print("max confidence limit is strangely high for:")
-  glimpse(filter(adjusted_rates_out, conf.high > 2e200))
-  print("removing this from the plots")
-  adjusted_rates_out <- adjusted_rates_out %>% 
-    filter(conf.high<2e200)
-}
-if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
-  print("max std. error is strangely high for:")
-  glimpse(filter(adjusted_rates_out, std_error > 1))
-  print("removing this from the plots")
-  adjusted_rates_out <- adjusted_rates_out %>% 
-    filter(is.na(std_error) | std_error<1)
-}
-
 outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
 cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16)]
 names(cols) <- outcome_list
+
+## filter out any estimates that are from <50 events because they are wildly imprecise and unhelpful
+adjusted_rates_out <- adjusted_rates_raw %>% 
+  filter(out > 50 | str_detect(term, "baseline"))
 
 # plot rate ratios with table -----------------------------------------------------
 sigdig <- 2
@@ -66,7 +55,13 @@ suppress_labs <- function(string) {
   rep("", length(string))
 }
 
-create_forest_plot_by_variant <- function(data_in, y_col_var, plot_rel_widths = c(4, 6), legend_position = "right") {
+create_forest_plot <- function(data_in,
+                               y_col_var,
+                               plot_rel_widths = c(4, 6),
+                               legend_position = "right",
+                               plot_ncol = 1, 
+                               plot_nrow = 2, 
+                               by_variant = TRUE) {
   if (y_col_var == "outcome"){
     outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
     cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16,19)]
@@ -77,22 +72,26 @@ create_forest_plot_by_variant <- function(data_in, y_col_var, plot_rel_widths = 
     names(cols) <- n_cols
   }
   
+  if (by_variant) {
+    data_in <- data_in %>%
+      # filter to the variant
+      filter(covid_variant != "All")
+  }
+  
   data_for_table <- data_in %>%
-    # filter to the variant 
-    filter(covid_variant != "All") %>% 
     # keep the texty stuff for a nice table
     dplyr::select(strat_var, term2, outcome, covid_variant, model, textrate, textci) %>%
     # convert to longer for plotting
     tidyr::pivot_longer(c(textrate, textci), names_to = "stat") %>%
     mutate(stat = factor(stat, levels = c("textrate", "textci")))
-    
+  
   rr_tab <- data_for_table %>%
     ggplot(aes(x = stat, y = term2, label = value)) +
     geom_text(size = 4, hjust = 1) +
     scale_x_discrete(position = "top", labels = c("RR", "95% CI")) +
     facet_grid(
       rows = vars(strat_var),
-      cols = vars(get(y_col_var), covid_variant),
+      cols = vars(covid_variant, get(y_col_var)),
       scales = "free_y",
       space = "free_y",
       switch = "y"
@@ -113,7 +112,6 @@ create_forest_plot_by_variant <- function(data_in, y_col_var, plot_rel_widths = 
       )
   
   rr_forest <- data_in %>% 
-    filter(covid_variant != "All") %>% 
     ggplot(
       aes(x = term2,
           y = rate,
@@ -161,29 +159,52 @@ create_forest_plot_by_variant <- function(data_in, y_col_var, plot_rel_widths = 
     ) +
     coord_flip()
   
-  ggarrange(rr_forest, rr_tab, ncol = 1, nrow=2, common.legend = T, legend = "right", heights = plot_rel_widths)
+  ggarrange(rr_forest, rr_tab, ncol = plot_ncol, nrow = plot_nrow, common.legend = T, legend = "right", heights = plot_rel_widths)
 }
 
 # # Crude RRs
-crude_plot <- create_forest_plot_by_variant(filter(full_rates, model == "crude"), y_col_var = "outcome")
+crude_plot <- create_forest_plot(
+  filter(full_rates, model == "crude", covid_variant == "All"),
+  y_col_var = "outcome",
+  plot_nrow = 2,
+  plot_ncol = 1,
+  by_variant = FALSE
+)
 
-pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 25, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 28, height = 10, onefile=FALSE)
   crude_plot
 dev.off()
 
-# Adjusted RRs
-adjusted_plot <- create_forest_plot_by_variant(filter(full_rates, model == "adjusted"), y_col_var = "outcome")
+# All adjusted RRs averaged over variant. At the same time....
+all_plot <- create_forest_plot(
+  filter(full_rates, model == "adjusted", covid_variant == "All"),
+  y_col_var = "outcome",
+  plot_nrow = 2,
+  plot_ncol = 1,
+  by_variant = FALSE
+)
 
-pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 25, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 20, height = 12, onefile=FALSE)
+  all_plot
+dev.off()
+
+
+# Adjusted RRs
+adjusted_plot <- create_forest_plot(filter(full_rates, model == "adjusted"), y_col_var = "outcome")
+
+pdf(here("output/figures/fig3c_adjusted_RRs_by_variant.pdf"), width = 28, height = 10, onefile=FALSE)
   adjusted_plot
 dev.off()
 
-# Focus on vaccines
-vaccine_plot <- create_forest_plot_by_variant(filter(full_rates, model == "adjusted", str_detect(strat_var, "vaccine")), y_col_var = "outcome")
+# Focus on vaccines - by_variant
+vaccine_plot <- create_forest_plot(filter(full_rates, model == "adjusted", str_detect(strat_var, "vaccine")), y_col_var = "outcome")
 
-pdf(here("output/figures/fig3e_vaccines.pdf"), width = 20, height = 12, onefile=FALSE)
+pdf(here("output/figures/fig3d_vaccines.pdf"), width = 20, height = 12, onefile=FALSE)
   vaccine_plot
 dev.off()
+
+
+
 
 # Make a nice table of the results ----------------------------------------
 output_poisson_rates <- full_rates %>% 

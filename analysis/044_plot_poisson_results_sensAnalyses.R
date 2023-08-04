@@ -14,23 +14,8 @@ adjusted_rates_out_SA <- read_csv("output/tab023_poissonrates_timeupdated_sensAn
 dir.create(here("output/figures"), showWarnings = FALSE, recursive=TRUE)
 dir.create(here("output/tables"), showWarnings = FALSE, recursive=TRUE)
 
-if(max(adjusted_rates_out$conf.high, na.rm = T) > 2e200){
-  print("max confidence limit is strangely high for:")
-  glimpse(filter(adjusted_rates_out, conf.high > 2e200))
-  print("removing this from the plots")
-  adjusted_rates_out <- adjusted_rates_out %>% 
-    filter(conf.high<2e200)
-}
-if(max(adjusted_rates_out$std_error, na.rm = T) > 1){
-  print("max std. error is strangely high for:")
-  glimpse(filter(adjusted_rates_out, std_error > 1))
-  print("removing this from the plots")
-  adjusted_rates_out <- adjusted_rates_out %>% 
-    filter(is.na(std_error) | std_error<1)
-}
-
-outcome_list <- c("All Long COVID", "Long COVID diagnoses", "COVID-19 hospitalisation")
-cols <- hcl.colors(20, palette = "Viridis")[c(1,10,16)]
+outcome_list <- c("All Long COVID", "Long COVID diagnoses")
+cols <- hcl.colors(20, palette = "Viridis")[c(1,10)]
 names(cols) <- outcome_list
 
 # plot rate ratios with table -----------------------------------------------------
@@ -42,8 +27,8 @@ full_rates <- adjusted_rates_out %>%
   # just keep the useful data
   dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant, sa) %>% 
   # convert the lovely estimates to lovely strings
-  mutate(textrate = sprintf("%0.1f", signif(rate, sigdig)),
-         textci = sprintf(paste0("(", signif(conf.low, sigdig), "-", signif(conf.high, sigdig), ")"))) %>% 
+  mutate(textrate = sprintf("%0.1f", round(signif(rate, sigdig), sigdig)),
+         textci = sprintf(paste0("(", round(signif(conf.low, sigdig), sigdig), "-", round(signif(conf.high, sigdig), sigdig), ")"))) %>% 
   # get rid of the variable names as part of the term2 label
   mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_mrna|t_vacc_primary")) %>% 
   mutate_at(c("term2"), ~ifelse(str_detect(term2, "baseline"), paste0(".", term2), .)) %>% 
@@ -65,12 +50,12 @@ full_rates <- adjusted_rates_out %>%
   filter(plot_marker) %>% 
   # create structure of SA variable with factor
   mutate(sa = factor(sa,
-         levels = c("0 weeks",
-                    "2 weeks",
-                    "4 weeks",
-                    "12 weeks"
+         labels = c("12 weeks",
+                    "16 weeks",
+                    "24 weeks"
                     ))
   )
+
 
 ## Only keep the vaccine stratifiedmodels and the ALL variant models for this plot
 full_rates <- full_rates %>% 
@@ -97,7 +82,7 @@ create_forest_plot <- function(data_in, variant, plot_rel_widths = c(7, 3), lege
     scale_x_discrete(position = "top", labels = c("RR", "95% CI")) +
     facet_grid(
       rows = vars(strat_var),
-      cols = vars(outcome, sa),
+      cols = vars(sa, outcome),
       scales = "free_y",
       space = "free_y",
       switch = "y"
@@ -142,7 +127,7 @@ create_forest_plot <- function(data_in, variant, plot_rel_widths = c(7, 3), lege
     ) +
     scale_color_manual(values = cols) +
     scale_y_log10(breaks = c(0.1, 0.2, 0.33, 0.5, 1.0, 2.0, 3.0, 5, 10),
-                  limits = c(0.1, 10),
+                  limits = c(0.05, 15),
                   minor_breaks = NULL) +
     theme_classic() +
     theme(
@@ -169,21 +154,14 @@ create_forest_plot <- function(data_in, variant, plot_rel_widths = c(7, 3), lege
 }
 
 ## Crude RRs
-pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 25, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3a_crude_RRs_sensAnalysis.pdf"), width = 20, height = 10, onefile=FALSE)
   create_forest_plot(filter(full_rates, model == "crude", outcome != "COVID-19 hospitalisation"))
 dev.off()
 
 # Adjusted RRs
 adjusted_plot <- create_forest_plot(filter(full_rates, model == "adjusted", outcome != "COVID-19 hospitalisation"))
-
-pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 25, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3b_adjusted_RRs_sensAnalysis.pdf"), width = 20, height = 10, onefile=FALSE)
   adjusted_plot
-dev.off()
-
-covid_hosp_plot <- create_forest_plot(filter(full_rates, model == "adjusted"))
-
-pdf(here("output/figures/fig3b_adjusted_RRs_all_outcomes_sensAnalysis.pdf"), width = 25, height = 10, onefile=FALSE)
-  covid_hosp_plot
 dev.off()
 
 # Make a nice table of the results ----------------------------------------
@@ -206,9 +184,7 @@ output_poisson_rates <- full_rates %>%
                 rr_all_long_covid, 
                 ci_all_long_covid,
                 rr_long_covid_diagnoses, 
-                ci_long_covid_diagnoses,
-                rr_covid_19_hospitalisation, 
-                ci_covid_19_hospitalisation
+                ci_long_covid_diagnoses
   ) %>% 
   mutate(variable = factor(variable,
                            levels = c(
