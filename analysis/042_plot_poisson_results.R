@@ -7,6 +7,7 @@ library(here)
 
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
+source(here::here("analysis/functions/number_format.R"))
 
 adjusted_rates_raw <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
 
@@ -28,8 +29,13 @@ full_rates <- adjusted_rates_out %>%
   # just keep the useful data
   dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant) %>% 
   # convert the lovely estimates to lovely strings
-  mutate(textrate = sprintf("%0.1f", signif(rate, sigdig)),
-         textci = sprintf(paste0("(", signif(conf.low, sigdig), "-", signif(conf.high, sigdig), ")"))) %>% 
+  mutate(
+    temprate = sapply(rate, function(xx){fmt_numbers_for_plot(xx)}),
+    tempcilow = sapply(conf.low, function(xx){fmt_numbers_for_plot(xx)}),
+    tempcihigh = sapply(conf.high, function(xx){fmt_numbers_for_plot(xx)}),
+    textrate = sprintf(paste0(temprate)),
+    textci = sprintf(paste0("(", tempcilow, "-", tempcihigh, ")"))) %>% 
+  dplyr::select(-c(temprate, tempcilow, tempcihigh)) %>% 
   # get rid of the variable names as part of the term2 label
   mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_mrna|t_vacc_primary")) %>% 
   mutate_at(c("term2"), ~ifelse(str_detect(term2, "baseline"), paste0(".", term2), .)) %>% 
@@ -171,7 +177,7 @@ crude_plot <- create_forest_plot(
   by_variant = FALSE
 )
 
-pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 28, height = 10, onefile=FALSE)
+pdf(here("output/figures/fig3a_crude_RRs.pdf"), width = 13, height = 13, onefile=FALSE)
   crude_plot
 dev.off()
 
@@ -184,7 +190,7 @@ all_plot <- create_forest_plot(
   by_variant = FALSE
 )
 
-pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 20, height = 12, onefile=FALSE)
+pdf(here("output/figures/fig3b_adjusted_RRs.pdf"), width = 13, height = 13, onefile=FALSE)
   all_plot
 dev.off()
 
@@ -202,9 +208,6 @@ vaccine_plot <- create_forest_plot(filter(full_rates, model == "adjusted", str_d
 pdf(here("output/figures/fig3d_vaccines.pdf"), width = 20, height = 12, onefile=FALSE)
   vaccine_plot
 dev.off()
-
-
-
 
 # Make a nice table of the results ----------------------------------------
 output_poisson_rates <- full_rates %>% 

@@ -84,7 +84,7 @@ other_codes <- rep("Other", length(x)-length(keep_codes))
 # create factor variable with new grouping
 clean_data_snomedcode$term_fct <- factor(clean_data_snomedcode$term, 
                                          levels = snomedcode_table$term, 
-                                         labels = str_wrap(c(keep_codes, other_codes), width = 30))
+                                         labels = str_wrap(c(keep_codes, other_codes), width = 75))
 
 summarise_records_by_month <- function(timedata_in, outcome_date){
   timedata_in %>% 
@@ -147,7 +147,7 @@ p_master <- ggarrange(
   labels = "AUTO"
 )
 
-pdf(here::here("output/figures/fig2h_daily_dynamics_and_by_snomed.pdf"), width = 10, height = 8)
+pdf(here::here("output/figures/fig2h_daily_dynamics_and_by_snomed.pdf"), width = 8, height = 8)
   p_master
 dev.off()
 

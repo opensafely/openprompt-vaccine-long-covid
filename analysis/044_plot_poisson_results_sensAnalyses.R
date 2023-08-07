@@ -7,6 +7,7 @@ library(here)
 
 source(here::here("analysis/functions/redaction.R"))
 source(here::here("analysis/functions/ggplot_theme.R"))
+source(here::here("analysis/functions/number_format.R"))
 
 adjusted_rates_out <- read_csv("output/tab023_poissonrates_timeupdated.csv") 
 adjusted_rates_out_SA <- read_csv("output/tab023_poissonrates_timeupdated_sensAnalysis.csv") 
@@ -19,7 +20,6 @@ cols <- hcl.colors(20, palette = "Viridis")[c(1,10)]
 names(cols) <- outcome_list
 
 # plot rate ratios with table -----------------------------------------------------
-sigdig <- 2
 # bit of formatting so it all looks pretty in the plots
 full_rates <- adjusted_rates_out %>% 
   mutate(sa = "0 weeks") %>% 
@@ -27,8 +27,13 @@ full_rates <- adjusted_rates_out %>%
   # just keep the useful data
   dplyr::select(strat_var, term2, rate, conf.low, conf.high, outcome, model, plot_marker, baseline, model, covid_variant, sa) %>% 
   # convert the lovely estimates to lovely strings
-  mutate(textrate = sprintf("%0.1f", round(signif(rate, sigdig), sigdig)),
-         textci = sprintf(paste0("(", round(signif(conf.low, sigdig), sigdig), "-", round(signif(conf.high, sigdig), sigdig), ")"))) %>% 
+  mutate(
+    temprate = sapply(rate, function(xx){fmt_numbers_for_plot(xx)}),
+    tempcilow = sapply(conf.low, function(xx){fmt_numbers_for_plot(xx)}),
+    tempcihigh = sapply(conf.high, function(xx){fmt_numbers_for_plot(xx)}),
+    textrate = sprintf(paste0(temprate)),
+    textci = sprintf(paste0("(", tempcilow, "-", tempcihigh, ")"))) %>% 
+  dplyr::select(-c(temprate, tempcilow, tempcihigh)) %>% 
   # get rid of the variable names as part of the term2 label
   mutate(term2 = str_remove_all(term2, "sex|age_cat|vaccines|ethnicity|comorbidities|practice_nuts|highrisk_shield|t_vacc_mrna|t_vacc_primary")) %>% 
   mutate_at(c("term2"), ~ifelse(str_detect(term2, "baseline"), paste0(".", term2), .)) %>% 
@@ -50,10 +55,8 @@ full_rates <- adjusted_rates_out %>%
   filter(plot_marker) %>% 
   # create structure of SA variable with factor
   mutate(sa = factor(sa,
-         labels = c("12 weeks",
-                    "16 weeks",
-                    "24 weeks"
-                    ))
+                     levels = c("0 weeks", "4 weeks", "12 weeks"),
+                     labels = c("12 weeks", "16 weeks", "24 weeks"))
   )
 
 
