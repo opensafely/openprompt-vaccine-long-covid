@@ -202,13 +202,14 @@ long_covid_demographics_by_test_status_tbl <- long_covid_demographics_by_test_st
     n = redact_and_round(n, redact_threshold = 10),
     N = redact_and_round(N, redact_threshold = 10),
     p = round(n*100 / N, 1),
-    pval = round(p.value, 2),
-    output = glue::glue("{n} ({p}) [{pval}]")
+    output = glue::glue("{n} ({p})"),
+    pval = round(p.value, 2)
   ) %>% 
-  dplyr::select(var_label, by, variable, variable_levels, output) %>% 
-  pivot_wider(values_from = "output", names_from = "by")
+  dplyr::select(var_label, by, variable, variable_levels, output, pval) %>% 
+  pivot_wider(values_from = "output", names_from = "by") %>% 
+  dplyr::select(1:3, 5:6, pval)
 
-write.csv(long_covid_demographics_by_test_status_tbl, here::here("output/data_demographics_by_test_status.csv"))
+write.csv(long_covid_demographics_by_test_status_tbl, here::here("output/data_demographics_by_test_status.csv"), row.names = FALSE)
 
 # repeat but separate by Dx or Rx code ------------------------------------
 long_covid_demographics_by_dx_rx <- table_data %>% 
@@ -246,10 +247,11 @@ long_covid_demographics_by_dx_rx_tbl <- long_covid_demographics_by_dx_rx$meta_da
     n = redact_and_round(n, redact_threshold = 10),
     N = redact_and_round(N, redact_threshold = 10),
     p = round(n*100 / N, 1),
-    pval = round(p.value, 2),
-    output = glue::glue("{n} ({p}) [{pval}]")
+    output = glue::glue("{n} ({p})"),
+    pval = round(p.value, 2)
   ) %>% 
-  dplyr::select(var_label, by, variable, variable_levels, output) %>% 
-  pivot_wider(values_from = "output", names_from = "by")
+  dplyr::select(var_label, by, variable, variable_levels, output, pval) %>% 
+  pivot_wider(values_from = "output", names_from = "by") %>% 
+  dplyr::select(1:3, 5:6, pval)
 
-write.csv(long_covid_demographics_by_dx_rx_tbl, here::here("output/data_demographics_by_dx_rx.csv"))
+write.csv(long_covid_demographics_by_dx_rx_tbl, here::here("output/data_demographics_by_dx_rx.csv"), row.names = FALSE)
