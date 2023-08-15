@@ -101,9 +101,9 @@ redacted_crude_rates <- tidy_crude_rates %>%
 ## redact the rates if the count has been redacted
 redacted_crude_rates <- redacted_crude_rates %>% 
   mutate_at(vars(longcovid_rate_per1e5:ci_longcovid_rate_per1e5), 
-            ~ifelse(is.na(n_with_longcovid), "-", .)) %>% 
+            ~ifelse(n_with_longcovid == "NA", "-", .)) %>% 
   mutate_at(vars(longcovid_rate_per1e5_diagnosis:ci_longcovid_rate_per1e5_diagnosis),
-            ~ifelse(is.na(n_with_longcovid_diagnosis), "-", .))
+            ~ifelse(n_with_longcovid_diagnosis == "NA", "-", .))
 
 ## output the neat csv
 redacted_crude_rates %>% 
