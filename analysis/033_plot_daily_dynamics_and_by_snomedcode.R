@@ -153,10 +153,12 @@ dev.off()
 
 # "Your COVID recovery" by region -----------------------------------------
 three_spike_dates <- c("2022-01-27", "2021-11-29", "2021-07-21") %>% as.Date()
-clean_data_snomedcode %>% 
+yourcovidrecovery <- clean_data_snomedcode %>% 
   filter(first_lc %in% three_spike_dates & str_detect(term, "Your COVID Recovery")) %>% 
   group_by(first_lc, region) %>% 
-  summarise(n = n()) %>% 
+  summarise(n = n(), .groups = "keep") %>% 
   mutate(n = redact_and_round(n, redact_threshold)) %>%
-  arrange(first_lc, -n, region) %>% 
-  write_csv(here::here("output/supplementary/yourcovidrecovery.csv"))
+  dplyr::arrange(first_lc, region)
+
+write_csv(yourcovidrecovery, here::here("output/supplementary/yourcovidrecovery.csv"))
+  
