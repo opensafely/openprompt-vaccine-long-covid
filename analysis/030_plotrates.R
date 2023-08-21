@@ -226,16 +226,17 @@ levels(stacked_bar$term2) <- str_wrap(levels(stacked_bar$term2), width = 40)
 names(colours) <- levels(stacked_bar$term2)
 print(colours)
 
-test <- stacked_bar %>% 
+stacked_bar_plot <- stacked_bar %>% 
   group_by(date) %>% 
-  mutate(pct = prop.table(count) * 100) %>% 
+  mutate(pct = prop.table(count) * 100,
+         daily_count = sum(count)) %>% 
   ungroup() 
 
-## need to censor where one code makes up 100% of cases
-test$pct[test$pct == 100] <- NA
+## need to censor when the number of codes that day are <10
+stacked_bar_plot$pct[stacked_bar_plot$daily_count < 10] <- NA
 
 # make the plot
-p2e <- ggplot(test, aes(fill=term2, y=pct, x=date)) + 
+p2e <- ggplot(stacked_bar_plot, aes(fill=term2, y=pct, x=date)) + 
   geom_bar(position="fill", stat="identity", width = 6) +
   scale_y_continuous(breaks = seq(0,1,0.25), labels = seq(0,100,25)) +
   scale_fill_manual(values = colours) +
@@ -265,8 +266,8 @@ dev.off()
 
 # output the data used for figure 2 ---------------------------------------
 write_csv(p2_data, here::here("output/fig2A_data_for_plot.csv"))
-write_csv(dplyr::select(p2c_data, -sum_out), here::here("output/fig2B_data_for_plot.csv"))
-write_csv(stacked_bar, here::here("output/fig2C_data_for_plot.csv"))
+write_csv(stacked_bar_plot, here::here("output/fig2B_data_for_plot.csv"))
+write_csv(dplyr::select(p2c_data, -sum_out), here::here("output/fig2C_data_for_plot.csv"))
 
 # supplement - time gaps between vaccine doses  ---------------------------
 vaccine_gaps <- time_data_lc_all %>%
