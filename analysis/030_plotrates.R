@@ -1,4 +1,5 @@
 library(tidyverse)
+library(forcats)
 library(broom)
 library(lubridate)
 library(survival)
@@ -16,10 +17,24 @@ dir.create(here("output/supplementary"), showWarnings = FALSE, recursive=TRUE)
 redact_threshold <- 10
 
 # import data ------------------------------------------------------------
+snomed_code <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet")) %>% 
+  dplyr::select(patient_id, first_lc_code)
+
 time_data_lc_all <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_all.gz.parquet")) %>%
-  rename(lc_out = out)
+  rename(lc_out = out) %>% 
+  left_join(snomed_code, by = "patient_id")
+
 time_data_lc_dx <- arrow::read_parquet(here::here("output/timeupdate_dataset_lc_dx.gz.parquet")) %>%
-  rename(lc_dx = out)
+  rename(lc_dx = out) %>%
+  left_join(snomed_code, by = "patient_id")
+
+
+longcovid_combined_codelist <- bind_rows(
+  readr::read_csv(here("codelists/opensafely-nice-managing-the-long-term-effects-of-covid-19.csv")),
+  readr::read_csv(here("codelists/opensafely-assessment-instruments-and-outcome-measures-for-long-covid.csv")),
+  readr::read_csv(here("codelists/opensafely-referral-and-signposting-for-long-covid.csv"))
+)
+
 
 # define colours ----------------------------------------------------------
 cols <- c(
@@ -30,7 +45,7 @@ cols <- c(
   "1st vaccine dose" = "blueviolet",
   "long COVID hospital" = "forestgreen")
 
-lc_dx_cols <- c("coral", "aquamarine2")
+lc_dx_cols <- c("red1", "dodgerblue1")
 
 vaccgroups <- levels(time_data_lc_all$vaccines)
 n_groups <- length(vaccgroups)
@@ -49,12 +64,12 @@ summarise_records_by_month <- function(timedata_in, outcome_var){
     # redundant filter but keep it in for safety
     filter(sex %in% c("male", "female")) %>% 
     # select the important variables
-    dplyr::select(patient_id, age_cat, sex, vaccines, outcome_date, outcome_binary) %>% 
+    dplyr::select(patient_id, age_cat, sex, vaccines, first_lc_code, outcome_date, outcome_binary) %>% 
     # get the week number and year from the date
     mutate(week = lubridate::week(outcome_date),
            year = lubridate::year(outcome_date)) %>% 
     # group and summarise weekly counts
-    group_by(year, week, sex, vaccines) %>% 
+    group_by(year, week, first_lc_code, sex, vaccines) %>% 
     summarise(sum_out = sum(outcome_binary, na.rm = TRUE), .groups = "keep") %>% 
     # make a fake date variable for plotting purposes
     mutate(date = make_date(year, 1, 1) + (week*7))
@@ -65,7 +80,8 @@ timeseries_lc_all <- summarise_records_by_month(time_data_lc_all, lc_out) %>%
 timeseries_lc_dx <- summarise_records_by_month(time_data_lc_dx, lc_dx) %>% 
   mutate(outcome = "long COVID Dx")
 timeseries_plot <- bind_rows(timeseries_lc_all,
-                             timeseries_lc_dx)
+                             timeseries_lc_dx) 
+
 timeseries_lc_all <- NULL
 timeseries_lc_dx <- NULL
 
@@ -76,7 +92,7 @@ p2_data <- timeseries_plot %>%
 
 if(max(p2_data$redacted_out, na.rm = T) > 0){
   p_base <- ggplot(p2_data, aes(x = date, y = redacted_out, colour = outcome, fill = outcome)) +
-      labs(x = "Date", y = "Count of Long COVID codes") +
+      labs(x = "Date", y = "Count of new Long COVID codes") +
       scale_color_manual(values = cols[1:2]) +
       scale_fill_manual(values = cols[1:2]) +
       theme_ali() + 
@@ -133,7 +149,7 @@ if(max(p2c_data$redacted_out, na.rm = T) > 0){
   # make base plot for 2b and 2c  
   p2base <- ggplot(p2c_data, aes(x = date, y = redacted_out, fill = vaccines)) +
     scale_fill_manual(values = colours) +
-    labs(x = "Date", y = "Count of Long COVID codes", fill = "Vaccines received") +
+    labs(x = "Date", y = "Count of new Long COVID codes", fill = "Vaccines received") +
     theme_ali() + 
     theme(strip.background = element_blank())
   
@@ -144,7 +160,7 @@ if(max(p2c_data$redacted_out, na.rm = T) > 0){
   
   # plot 2x2 panel version of long covid by vaccine status over time
   p2c <- p2base +
-    geom_col(lwd = 0.2, lty = 0, width = 6) +
+    geom_col(lwd = 0.2, lty = 0, width = 6) + 
     facet_grid(sex~outcome)
 }else{
   p2b <- ggplot() + theme_void()
@@ -161,13 +177,55 @@ dev.off()
 
 # stacked bar chart for proportion Rx vs Dx -------------------------------
 stacked_bar <- timeseries_plot %>% 
-  group_by(date, outcome) %>% 
+  left_join(longcovid_combined_codelist, by = c("first_lc_code" = "code")) %>% 
+  group_by(date, outcome, term) %>% 
   summarise(redacted_out = redact_and_round(sum(sum_out, na.rm = T), redact_threshold = redact_threshold), .groups = "keep")
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
-p2e <- ggplot(stacked_bar, aes(fill=lc_dx, y=redacted_out, x=date)) + 
+## get the 4 most common terms
+top4 <- sort(table(stacked_bar$term), decreasing = TRUE)[1:4] %>% names() 
+
+## group everything else in "Other" and reorder according to appearance in the data
+stacked_bar$term2 <- ifelse(stacked_bar$term %in% top4, stacked_bar$term, "Other") %>% forcats::fct_inorder()
+
+## relevel the factor variable so "Other" comes at the end
+stacked_bar$term2 <- fct_relevel(stacked_bar$term2, "Other", after = Inf)
+
+## str_wrap the levels labels so they spread over multiple rows in the plot
+levels(stacked_bar$term2) <- str_wrap(levels(stacked_bar$term2), width = 60)
+
+## set colours for the variables depending on if they're Dx codes or not
+# set up a palette of 5 colours of reds (Referral codes)
+colours <- hcl.colors(5, palette = "Reds")
+
+# name the vector based on the 4 selected terms (plus "Other") 
+names(colours) <- levels(stacked_bar$term2)
+
+# Now find out which terms are associated with Dx (not Rx) and keep the first 30 characters to search for next
+dx_terms <- stacked_bar$term[stacked_bar$lc_dx == "Dx"] %>% unique() %>% str_trunc(width = 30, ellipsis = "")
+
+# in the colour palette, find the position of the Dx terms if any exist
+dx_col_terms <- str_detect(levels(stacked_bar$term2), paste0(dx_terms, collapse = "|"))
+
+# how many Dx terms do we have in this dataset? 
+n_cols <- length(dx_col_terms[dx_col_terms == TRUE])
+
+# set up some blue colours for the number of Dx terms in existence
+dx_cols <- hcl.colors(n_cols, palette = "Blues")
+
+# assign the blues to the dx terms
+colours[dx_col_terms] <- dx_cols
+
+# make Other gray 
+colours["Other"] <- "gray60"
+
+# make the plot
+p2e <- ggplot(stacked_bar, aes(fill=term2, y=redacted_out, x=date)) + 
   geom_bar(position="fill", stat="identity", width = 6) +
-  scale_fill_manual(values = lc_dx_cols) +
+  scale_fill_manual(values = colours) +
+  guides(
+    fill=guide_legend(nrow=3,byrow=TRUE)
+  ) +
   labs(x = "Date", y = "Type of long COVID code", fill = "Rx or Dx code") +
   theme_ali() + 
   theme(strip.background = element_blank(),
@@ -179,7 +237,7 @@ dev.off()
 
 # put together the nice figure for the paper ------------------------------
 p2_full <- cowplot::plot_grid(
-  p2, p2b, p2e,
+  p2, p2e, p2b, 
   ncol = 1,
   labels = "AUTO"
   )
