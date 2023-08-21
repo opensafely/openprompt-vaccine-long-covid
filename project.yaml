@@ -149,7 +149,7 @@ actions:
     run: >
       r:latest
         analysis/030_plotrates.R
-    needs: [time_update_data]
+    needs: [clean_the_data, time_update_data]
     outputs:
       moderately_sensitive:
         counts_line: output/figures/fig2_raw_counts_line.pdf
