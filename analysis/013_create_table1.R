@@ -90,7 +90,7 @@ make_table_and_export <- function(df, labels, outname_stub, tbl_by = NULL){
       label = unname(labels[names(.)]),
       by = tbl_by,
       statistic = list(
-        all_continuous() ~ "{mean} ({p25}-{p75})",
+        all_continuous() ~ "{p50} ({p25}-{p75})",
         all_categorical() ~ "{n} ({p}%)"
       ),
       digits = all_continuous() ~ 1
@@ -145,7 +145,7 @@ make_table_and_export <- function(df, labels, outname_stub, tbl_by = NULL){
     mutate_if(is.numeric, ~prettyNum(formatC(., digits = 1, format = "f"), 
                                      big.mark = ",", preserve.width = "none",
                                      drop0trailing = TRUE)) %>% 
-    mutate(stat = paste0(mean, " (", p25, "-", p75,")")) 
+    mutate(stat = paste0(p50, " (", p25, "-", p75,")")) 
   
   if(!is.null(tbl_by)){
     raw_stats_redacted_numeric <- raw_stats_redacted_numeric %>% 
@@ -212,7 +212,7 @@ vaccine_gaps_data <- cleaned_data %>%
 
 vaccine_gaps_tab <- vaccine_gaps_data %>%
   group_by(no_prev_vacc, lc_dx_flag) %>% 
-  summarise(avg_gap = mean(last_vacc_gap), sd_gap = sd(last_vacc_gap), .groups = "keep")
+  summarise(avg_gap = median(last_vacc_gap), sd_gap = sd(last_vacc_gap), .groups = "keep")
 write_csv(vaccine_gaps_tab, here("output/supplementary/vaccines_longcovid_gap.csv"))
 
 pdf(here("output/supplementary/fig_vaccines_longcovid_gap.pdf"), width = 8, height = 6)
