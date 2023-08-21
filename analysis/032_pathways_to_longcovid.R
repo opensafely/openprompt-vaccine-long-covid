@@ -16,7 +16,7 @@ fs::dir_create(output_dir_tab)
 # import data ------------------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 
-lc_dx_cols <- c("coral", "aquamarine2")
+lc_dx_cols <- c("red", "dodgerblue1")
 
 # relationship between test positive and long COVID -----------------------
 summ_data <- cleaned_data %>% 
