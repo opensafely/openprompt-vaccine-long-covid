@@ -101,7 +101,7 @@ if(max(p2_data$redacted_out, na.rm = T) > 0){
   p2 <- p_base + 
     geom_line(lwd = 0.2, lty = 1) +
     labs(colour = "Long COVID record") +
-    theme(legend.position = "top") +
+    theme(legend.position = "bottom") +
     ylim(c(0, NA))
   
   # group by sex as well redact data for 2x2 plot
@@ -156,7 +156,7 @@ if(max(p2c_data$redacted_out, na.rm = T) > 0){
   # plot column in a single panel
   p2b <- p2base +
     geom_col(data = p2b_data, lwd = 0, lty = 0, width = 6) +
-    theme(legend.position = "top")
+    theme(legend.position = "bottom")
   
   # plot 2x2 panel version of long covid by vaccine status over time
   p2c <- p2base +
@@ -182,30 +182,33 @@ stacked_bar <- timeseries_plot %>%
   summarise(redacted_out = redact_and_round(sum(sum_out, na.rm = T), redact_threshold = redact_threshold), .groups = "keep")
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
-## get the 4 most common terms
-top4 <- sort(table(stacked_bar$term), decreasing = TRUE)[1:4] %>% names() 
+## get the 5 most common terms
+top5 <- sort(table(stacked_bar$term), decreasing = TRUE)[1:5] %>% names() 
 
 ## group everything else in "Other" and reorder according to appearance in the data
-stacked_bar$term2 <- ifelse(stacked_bar$term %in% top4, stacked_bar$term, "Other") %>% forcats::fct_inorder()
+stacked_bar$term2 <- ifelse(stacked_bar$term %in% top5, stacked_bar$term, "Other") %>% forcats::fct_inorder()
 
 ## relevel the factor variable so "Other" comes at the end
 stacked_bar$term2 <- fct_relevel(stacked_bar$term2, "Other", after = Inf)
 
 ## str_wrap the levels labels so they spread over multiple rows in the plot
-levels(stacked_bar$term2) <- str_wrap(levels(stacked_bar$term2), width = 60)
+levels(stacked_bar$term2) <- str_wrap(levels(stacked_bar$term2), width = 40)
 
 ## set colours for the variables depending on if they're Dx codes or not
-# set up a palette of 5 colours of reds (Referral codes)
-colours <- hcl.colors(5, palette = "Reds")
+# set up a palette of 6 colours of reds (Referral codes)
+colours <- hcl.colors(6, palette = "Reds")
+print(colours)
 
-# name the vector based on the 4 selected terms (plus "Other") 
+# name the vector based on the 5 selected terms (plus "Other") 
 names(colours) <- levels(stacked_bar$term2)
 
 # Now find out which terms are associated with Dx (not Rx) and keep the first 30 characters to search for next
-dx_terms <- stacked_bar$term[stacked_bar$lc_dx == "Dx"] %>% unique() %>% str_trunc(width = 30, ellipsis = "")
+dx_terms <- stacked_bar$term[stacked_bar$lc_dx == "Dx"] %>% unique() %>% str_trunc(width = 20, ellipsis = "")
+print(dx_terms)
 
 # in the colour palette, find the position of the Dx terms if any exist
 dx_col_terms <- str_detect(levels(stacked_bar$term2), paste0(dx_terms, collapse = "|"))
+print(dx_col_terms)
 
 # how many Dx terms do we have in this dataset? 
 n_cols <- length(dx_col_terms[dx_col_terms == TRUE])
@@ -219,16 +222,20 @@ colours[dx_col_terms] <- dx_cols
 # make Other gray 
 colours["Other"] <- "gray60"
 
+print(colours)
+
 # make the plot
 p2e <- ggplot(stacked_bar, aes(fill=term2, y=redacted_out, x=date)) + 
   geom_bar(position="fill", stat="identity", width = 6) +
+  scale_y_continuous(breaks = seq(0,1,0.25), labels = seq(0,100,25)) +
   scale_fill_manual(values = colours) +
   guides(
     fill=guide_legend(nrow=3,byrow=TRUE)
   ) +
-  labs(x = "Date", y = "Type of long COVID code", fill = "Rx or Dx code") +
+  labs(x = "Date", y = "% of all new records", fill = "") +
   theme_ali() + 
-  theme(strip.background = element_blank(),
+  theme(strip.background = element_blank(), 
+        panel.grid.major.y = element_blank(), 
         legend.position = "bottom")
 
 pdf(here("output/figures/fig2e_longcovid_stacked_dx_rx.pdf"), width = 8, height = 6)
@@ -242,10 +249,9 @@ p2_full <- cowplot::plot_grid(
   labels = "AUTO"
   )
 
-pdf(here("output/figures/fig2_longcovid_dynamics.pdf"), width = 6, height = 10)
+pdf(here("output/figures/fig2_longcovid_dynamics.pdf"), width = 7, height = 12)
   p2_full
 dev.off()
-
 
 # output the data used for figure 2 ---------------------------------------
 write_csv(p2_data, here::here("output/fig2A_data_for_plot.csv"))
