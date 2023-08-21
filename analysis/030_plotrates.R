@@ -179,7 +179,7 @@ dev.off()
 stacked_bar <- timeseries_plot %>% 
   left_join(longcovid_combined_codelist, by = c("first_lc_code" = "code")) %>% 
   group_by(date, outcome, term) %>% 
-  summarise(redacted_out = redact_and_round(sum(sum_out, na.rm = T), redact_threshold = redact_threshold), .groups = "keep")
+  summarise(count = sum(sum_out, na.rm = T), .groups = "keep")
 stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
 
 ## get the 5 most common terms
@@ -191,19 +191,16 @@ stacked_bar$term2 <- ifelse(stacked_bar$term %in% top5, stacked_bar$term, "Other
 ## relevel the factor variable so "Other" comes at the end
 stacked_bar$term2 <- fct_relevel(stacked_bar$term2, "Other", after = Inf)
 
-## str_wrap the levels labels so they spread over multiple rows in the plot
-levels(stacked_bar$term2) <- str_wrap(levels(stacked_bar$term2), width = 40)
-
 ## set colours for the variables depending on if they're Dx codes or not
 # set up a palette of 6 colours of reds (Referral codes)
 colours <- hcl.colors(6, palette = "Reds")
-print(colours)
 
 # name the vector based on the 5 selected terms (plus "Other") 
 names(colours) <- levels(stacked_bar$term2)
+print(colours)
 
 # Now find out which terms are associated with Dx (not Rx) and keep the first 30 characters to search for next
-dx_terms <- stacked_bar$term[stacked_bar$lc_dx == "Dx"] %>% unique() %>% str_trunc(width = 20, ellipsis = "")
+dx_terms <- pull(longcovid_combined_codelist[1:2, "term"])
 print(dx_terms)
 
 # in the colour palette, find the position of the Dx terms if any exist
@@ -222,10 +219,23 @@ colours[dx_col_terms] <- dx_cols
 # make Other gray 
 colours["Other"] <- "gray60"
 
+## str_wrap the levels labels so they spread over multiple rows in the plot
+levels(stacked_bar$term2) <- str_wrap(levels(stacked_bar$term2), width = 40)
+
+# re-assign the names of the colour vector with the new wrapped version
+names(colours) <- levels(stacked_bar$term2)
 print(colours)
 
+test <- stacked_bar %>% 
+  group_by(date) %>% 
+  mutate(pct = prop.table(count) * 100) %>% 
+  ungroup() 
+
+## need to censor where one code makes up 100% of cases
+test$pct[test$pct == 100] <- NA
+
 # make the plot
-p2e <- ggplot(stacked_bar, aes(fill=term2, y=redacted_out, x=date)) + 
+p2e <- ggplot(test, aes(fill=term2, y=pct, x=date)) + 
   geom_bar(position="fill", stat="identity", width = 6) +
   scale_y_continuous(breaks = seq(0,1,0.25), labels = seq(0,100,25)) +
   scale_fill_manual(values = colours) +
