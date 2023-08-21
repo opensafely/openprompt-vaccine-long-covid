@@ -32,9 +32,6 @@ cols <- c(
   "1st vaccine dose" = "blueviolet",
   "long COVID hospital" = "forestgreen")
 
-lc_dx_cols <- c("coral", "aquamarine2")
-
-
 # censor daily_dynamics ---------------------------------------------------
 dt_daily$n_first_lc <- redact_and_round(dt_daily$n_first_lc, redact_threshold)
 dt_daily$n_first_lc_dx <- redact_and_round(dt_daily$n_first_lc_dx, redact_threshold)
@@ -153,12 +150,19 @@ dev.off()
 
 # "Your COVID recovery" by region -----------------------------------------
 three_spike_dates <- c("2022-01-27", "2021-11-29", "2021-07-21") %>% as.Date()
-yourcovidrecovery <- clean_data_snomedcode %>% 
-  filter(first_lc %in% three_spike_dates & str_detect(term, "Your COVID Recovery")) %>% 
-  group_by(first_lc, region) %>% 
-  summarise(n = n(), .groups = "keep") %>% 
-  mutate(n = redact_and_round(n, redact_threshold)) %>%
-  dplyr::arrange(first_lc, region)
+yourcovidrecovery_data <- clean_data_snomedcode %>% 
+  filter(first_lc %in% three_spike_dates & str_detect(term, "Your COVID Recovery"))
+
+## fiddly loop to stop error message with dummy data
+if(dim(yourcovidrecovery_data)[1]==0){
+  yourcovidrecovery <- data.frame(x = "No Data")
+}else{
+  yourcovidrecovery <- yourcovidrecovery_data %>% 
+    group_by(first_lc, region) %>% 
+    summarise(n = n(), .groups = "keep") %>% 
+    mutate(n = redact_and_round(n, redact_threshold)) %>%
+    dplyr::arrange(first_lc, region)
+}
 
 write_csv(yourcovidrecovery, here::here("output/supplementary/yourcovidrecovery.csv"))
   
