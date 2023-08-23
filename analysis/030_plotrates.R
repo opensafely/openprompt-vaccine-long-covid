@@ -35,6 +35,7 @@ longcovid_combined_codelist <- bind_rows(
   readr::read_csv(here("codelists/opensafely-referral-and-signposting-for-long-covid.csv"))
 )
 
+date_axis_limits <- c(as.Date("2020-11-01"), as.Date("2023-01-30"))
 
 # define colours ----------------------------------------------------------
 cols <- c(
@@ -102,7 +103,8 @@ if(max(p2_data$redacted_out, na.rm = T) > 0){
     geom_line(lwd = 0.2, lty = 1) +
     labs(colour = "Long COVID record") +
     theme(legend.position = "bottom") +
-    ylim(c(0, NA))
+    ylim(c(0, NA)) + 
+    xlim(date_axis_limits)
   
   # group by sex as well redact data for 2x2 plot
   p2b_data <- timeseries_plot %>% 
@@ -114,8 +116,8 @@ if(max(p2_data$redacted_out, na.rm = T) > 0){
       geom_col(data = p2b_data, col = "gray20", lwd = 0.2) +
       facet_grid(sex~outcome) +
       theme(legend.position = "none") +
-      ylim(c(0, NA))
-    
+      ylim(c(0, NA)) + 
+      xlim(date_axis_limits)
     
   }else{
     p2a <- ggplot() + theme_void()
@@ -148,7 +150,8 @@ p2c_data <- timeseries_plot %>%
 if(max(p2c_data$redacted_out, na.rm = T) > 0){
   # make base plot for 2b and 2c  
   p2base <- ggplot(p2c_data, aes(x = date, y = redacted_out, fill = vaccines)) +
-    scale_fill_manual(values = colours) +
+    scale_fill_manual(values = colours) + 
+    xlim(date_axis_limits) +
     labs(x = "Date", y = "Count of new Long COVID codes", fill = "Vaccines received") +
     theme_ali() + 
     theme(strip.background = element_blank())
@@ -239,6 +242,7 @@ stacked_bar_plot$pct[stacked_bar_plot$daily_count < 10] <- NA
 p2e <- ggplot(stacked_bar_plot, aes(fill=term2, y=pct, x=date)) + 
   geom_bar(position="fill", stat="identity", width = 6) +
   scale_y_continuous(breaks = seq(0,1,0.25), labels = seq(0,100,25)) +
+  xlim(date_axis_limits) +
   scale_fill_manual(values = colours) +
   guides(
     fill=guide_legend(nrow=3,byrow=TRUE)
