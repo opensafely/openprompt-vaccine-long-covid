@@ -241,7 +241,7 @@ stacked_bar_plot <- stacked_bar %>%
   group_by(date, term2) %>% 
   summarise(count = sum(count)) %>% 
   ## can only include in the plot if weekly count is > redact_threshold
-  filter(count > 1) %>% 
+  filter(count > redact_threshold) %>% 
   group_by(date) %>% 
   mutate(pct = prop.table(count) * 100,
          daily_count = sum(count)) %>% 
