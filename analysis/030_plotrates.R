@@ -80,6 +80,10 @@ timeseries_lc_all <- summarise_records_by_month(time_data_lc_all, lc_out) %>%
   mutate(outcome = "long COVID")
 timeseries_lc_dx <- summarise_records_by_month(time_data_lc_dx, lc_dx) %>% 
   mutate(outcome = "long COVID Dx")
+
+## NB: timeseries_lc_dx is a subset of timeseries_lc_all. So be careful if summarising across all the data in the below
+## either need to include `outcome` as a geom/stratifier. Or only plot when outcome == "Long COVID"
+
 timeseries_plot <- bind_rows(timeseries_lc_all,
                              timeseries_lc_dx) 
 
@@ -180,10 +184,14 @@ dev.off()
 
 # stacked bar chart for proportion Rx vs Dx -------------------------------
 stacked_bar <- timeseries_plot %>% 
+  filter(outcome == "long COVID") %>% 
   left_join(longcovid_combined_codelist, by = c("first_lc_code" = "code")) %>% 
-  group_by(date, outcome, term) %>% 
+  group_by(date, term) %>% 
   summarise(count = sum(sum_out, na.rm = T), .groups = "keep")
-stacked_bar$lc_dx <- ifelse(stacked_bar$outcome == "long COVID Dx", "Dx", "Rx")
+longcovid_combined_codelist[1:2, 2] %>% pull()
+stacked_bar$lc_dx <- ifelse(stacked_bar$term %in% c("Post-COVID-19 syndrome",
+                                                    "Ongoing symptomatic disease caused by severe acute respiratory syndrome coronavirus 2"),
+                            "Dx", "Rx")
 
 ## get the 5 most common terms
 top5 <- sort(table(stacked_bar$term), decreasing = TRUE)[1:5] %>% names() 
