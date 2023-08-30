@@ -240,14 +240,17 @@ print(colours)
 stacked_bar_plot <- stacked_bar %>% 
   group_by(date, term2) %>% 
   summarise(count = sum(count)) %>% 
+  ## can only include in the plot if weekly count is > redact_threshold
+  filter(count > 1) %>% 
   group_by(date) %>% 
   mutate(pct = prop.table(count) * 100,
          daily_count = sum(count)) %>% 
   ungroup() 
 
-## need to censor when the number of codes that day are <10
+## ensure that week has at least 10 observations
 stacked_bar_plot$pct[stacked_bar_plot$daily_count <= 10] <- NA
-stacked_bar_plot$pct[stacked_bar_plot$count <= 10] <- NA
+
+## if one code makes up 100% of that week's observations, redact it
 stacked_bar_plot$pct[stacked_bar_plot$pct == 100] <- NA
 
 # make the plot
