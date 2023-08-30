@@ -238,6 +238,8 @@ names(colours) <- levels(stacked_bar$term2)
 print(colours)
 
 stacked_bar_plot <- stacked_bar %>% 
+  group_by(date, term2) %>% 
+  summarise(count = sum(count)) %>% 
   group_by(date) %>% 
   mutate(pct = prop.table(count) * 100,
          daily_count = sum(count)) %>% 
@@ -245,6 +247,8 @@ stacked_bar_plot <- stacked_bar %>%
 
 ## need to censor when the number of codes that day are <10
 stacked_bar_plot$pct[stacked_bar_plot$daily_count <= 10] <- NA
+stacked_bar_plot$pct[stacked_bar_plot$count <= 10] <- NA
+stacked_bar_plot$pct[stacked_bar_plot$pct == 100] <- NA
 
 # make the plot
 p2e <- ggplot(stacked_bar_plot, aes(fill=term2, y=pct, x=date)) + 
