@@ -244,7 +244,7 @@ stacked_bar_plot <- stacked_bar %>%
   ungroup() 
 
 ## need to censor when the number of codes that day are <10
-stacked_bar_plot$pct[stacked_bar_plot$daily_count < 10] <- NA
+stacked_bar_plot$pct[stacked_bar_plot$daily_count <= 10] <- NA
 
 # make the plot
 p2e <- ggplot(stacked_bar_plot, aes(fill=term2, y=pct, x=date)) + 
