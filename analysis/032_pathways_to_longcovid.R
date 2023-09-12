@@ -16,65 +16,14 @@ fs::dir_create(output_dir_tab)
 # import data ------------------------------------------------------------
 cleaned_data <- arrow::read_parquet(here::here("output/clean_dataset.gz.parquet"))
 
-lc_dx_cols <- c("red", "dodgerblue1")
-
-# relationship between test positive and long COVID -----------------------
-summ_data <- cleaned_data %>% 
-  dplyr::select(patient_id,
-                all_test_positive,
-                all_tests,
-                test_positive_cat, 
-                test_total_cat,
-                lc_dx_flag,
-                lc_out,
-                lc_dx_only,
-                last_vacc_gap) %>% 
-  mutate(test_pos_binary = factor(
-    as.numeric(all_test_positive > 0),
-    labels = c("No positive tests", 
-               ">=1 positive test")))  
-                             
-summ_data %>% 
-  dplyr::select(test_pos_binary, lc_out, lc_dx_only) %>% 
-  gtsummary::tbl_summary(
-    by = test_pos_binary,
-    label = list(
-      "lc_out" ~ "Any long COVID code",
-      "lc_dx_only" ~ "Long COVID Dx only"
-    )
-  ) %>% 
-  gtsummary::add_overall() %>% 
-  as_gt() %>%
-  gt::gtsave(
-    filename = "tab_tests_and_longcovid.html",
-    path = fs::path(output_dir_tab)
-  )
-
-# plot of time between test and LC ----------------------------------------
-gap_plot <- cleaned_data %>% 
-  dplyr::select(first_lc, lc_dx_flag, testdate = latest_test_before_diagnosis) %>% 
-  mutate(testgap = testdate %--% first_lc / dweeks(1))
-summ_gap_plot <- gap_plot %>% 
-  group_by(lc_dx_flag) %>% 
-  summarise(avggap = mean(testgap, na.rm = T)) %>% 
-  drop_na()
-
-pdf(here("output/supplementary/test_to_longcovid_density.pdf"), width = 8, height = 6)
-ggplot(gap_plot, aes(x = testgap, fill = lc_dx_flag)) +
-  geom_density(alpha = 0.76) +
-  geom_vline(data = summ_gap_plot, aes(xintercept = avggap, colour = lc_dx_flag)) +
-  labs(x = "Weeks between test and code",
-       y = "Density",
-       colour = "Rx or Dx code",
-       fill = "Rx or Dx code") +
-  theme_ali()
-dev.off()
+lc_dx_cols <- c("dodgerblue1", "red")
 
 # Sankey diagram of COVID states ------------------------------------------
 sankey_data <- cleaned_data %>% 
   dplyr::select(
     patient_id,
-    lc_dx_flag,
+    lc_out,
+    lc_dx_only,
     all_test_positive,
     all_tests,
     all_covid_hosp,
@@ -82,7 +31,10 @@ sankey_data <- cleaned_data %>%
     first_covid_hosp_primary_dx
   ) %>% 
   mutate(
-    lc_dx_flag = replace_na(as.character(lc_dx_flag), "None"),
+    lc_dx_flag = case_when(
+      lc_out == 1 & lc_dx_only == 1 ~ "Diagnosis", 
+      lc_out == 1 & lc_dx_only == 0 ~ "Referral"
+    ),
     test = all_test_positive > 0,
     hosp = case_when(
       all_covid_hosp > 0 ~ "Hospital admission", 
@@ -94,7 +46,7 @@ sankey_data <- cleaned_data %>%
     lc_dx_flag,
     test,
     hosp
-  ) 
+  )
 
 # sankey_data$hosp <- sample(c("None",
 #                              "Hospital admission",
@@ -109,7 +61,7 @@ is_alluvia_form(as.data.frame(sankey_plot), axes = 1:4, silent = TRUE)
 
 # reorder vars as factors
 sankey_plot$lc_dx_flag <- factor(sankey_plot$lc_dx_flag, 
-                                 levels = c("None", "Dx", "Rx"))
+                                 levels = c("None", "Diagnosis", "Referral"))
 sankey_plot$hosp <- factor(sankey_plot$hosp, 
                            levels = rev(c("None", 
                                       "Hospital admission")))
@@ -143,13 +95,12 @@ ggplot(sankey_plotv2,
   theme(legend.position = "top")
 dev.off()
 
-
 # compare distribution of folks with/without a +ve test --------------------
 table_data <- cleaned_data %>%
   filter(lc_out == 1) %>% 
   dplyr::select(
     lc_out,
-    lc_dx_flag,
+    lc_dx_only,
     sex,
     age_cat,
     practice_nuts,
@@ -174,7 +125,7 @@ long_covid_demographics_by_test_status <- table_data %>%
       all_continuous() ~ "{mean} ({sd})",
       all_categorical() ~ "{n} ({p})"),
     label = list(
-      "lc_dx_flag" ~ "Diagnosis or referral code",
+      "lc_dx_only" ~ "Diagnosis code",
       "sex" ~ "Sex",
       "age_cat" ~ "Age category",
       "practice_nuts" ~ "Region",
@@ -210,48 +161,3 @@ long_covid_demographics_by_test_status_tbl <- long_covid_demographics_by_test_st
   dplyr::select(1:3, 5:6, pval)
 
 write.csv(long_covid_demographics_by_test_status_tbl, here::here("output/data_demographics_by_test_status.csv"), row.names = FALSE)
-
-# repeat but separate by Dx or Rx code ------------------------------------
-long_covid_demographics_by_dx_rx <- table_data %>% 
-  gtsummary::tbl_summary(
-    by = lc_dx_flag,
-    statistic = list(
-      all_continuous() ~ "{mean} ({sd})",
-      all_categorical() ~ "{n} ({p})"),
-    label = list(
-      "lc_cat" ~ "Test +ve before long COVID",
-      "sex" ~ "Sex",
-      "age_cat" ~ "Age category",
-      "practice_nuts" ~ "Region",
-      "ethnicity" ~ "Ethnicity",
-      "imd_q5" ~ "IMD (quintile)",
-      "comorbidities" ~ "# comorbidities",
-      "no_prev_vacc" ~ "# vaccines",
-      "test_positive_cat" ~ "# positive tests",
-      "covid_hosp_cat" ~ "# COVID-19 hospitalisations"
-    )
-  ) %>% 
-  gtsummary::add_p()
-
-long_covid_demographics_by_dx_rx %>% 
-  as_gt() %>%
-  gt::gtsave(
-    filename = "tab_demographics_by_dx_rx.html",
-    path = fs::path(output_dir_tab)
-  )
-
-long_covid_demographics_by_dx_rx_tbl <- long_covid_demographics_by_dx_rx$meta_data %>% 
-  select(var_label, df_stats, p.value) %>%
-  unnest(df_stats) %>% 
-  mutate(
-    n = redact_and_round(n, redact_threshold = 10),
-    N = redact_and_round(N, redact_threshold = 10),
-    p = round(n*100 / N, 1),
-    output = glue::glue("{n} ({p})"),
-    pval = round(p.value, 2)
-  ) %>% 
-  dplyr::select(var_label, by, variable, variable_levels, output, pval) %>% 
-  pivot_wider(values_from = "output", names_from = "by") %>% 
-  dplyr::select(1:3, 5:6, pval)
-
-write.csv(long_covid_demographics_by_dx_rx_tbl, here::here("output/data_demographics_by_dx_rx.csv"), row.names = FALSE)

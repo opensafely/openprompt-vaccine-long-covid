@@ -50,8 +50,8 @@ tidy_crude_rates <- crude_rates %>%
                       "highrisk_shield"
                     ), 
                     labels = c(
-                      "Age category",
                       "Sex",
+                      "Age category",
                       "Region",
                       "Dominant SARS-COV-2 variant",
                       "No. vaccine doses",

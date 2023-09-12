@@ -170,14 +170,10 @@ actions:
     needs: [clean_the_data]
     outputs:
       moderately_sensitive:
-        tests_lc_table: output/tables/tab_tests_and_longcovid.html
-        tests_density: output/supplementary/test_to_longcovid_density.pdf
         longcovid_flows: output/figures/fig5_longcovid_flows.pdf
         longcovid_flows_data: output/sankey_plot_data.csv
         demographics_by_test_status: output/tables/tab_demographics_by_test_status.html
         demographics_by_test_status_csv: output/data_demographics_by_test_status.csv
-        demographics_by_dx_rx_tbl: output/tables/tab_demographics_by_dx_rx.html
-        demographics_by_dx_rx_csv: output/data_demographics_by_dx_rx.csv
   
   plot_daily_dynamics_and_by_snomedcode:
     run: >
