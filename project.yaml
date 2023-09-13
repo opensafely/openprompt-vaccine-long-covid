@@ -63,7 +63,8 @@ actions:
     needs: [clean_lc_pre_vacc_data, clean_the_data]
     outputs: 
       moderately_sensitive: 
-        vaccine_pct_plot: output/figures/fig6_vaccine_after_lc.pdf
+        vaccine_pct_plot: output/figures/fig6_vaccine_lc_comparison.pdf
+        vaccine_pct_plot: output/figures/fig6b_vaccines_post_lc_only.pdf
         vaccine_pct_data: output/lc_first_vaccination.csv
 
   time_update_data: 
