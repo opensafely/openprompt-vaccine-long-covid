@@ -61,7 +61,7 @@ summarise_vaccines_jan23 <- function(var){
     mutate(group_size = sum(n)) %>% 
     ungroup() %>% 
     mutate(
-      n = n,#redact_and_round(n, redact_threshold = 10),
+      n = redact_and_round(n, redact_threshold = 10),
       vacc_prev = round((n*100)/group_size, 2)
     )
 }
